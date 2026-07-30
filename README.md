@@ -23,11 +23,22 @@ python -m http.server 4321
 
 ## Deployen
 
-Statische site, dus overal te hosten:
+De site draait op Vercel in het project **portfoliov2** (team `zoabis`), met
+`zoabis.com` als domein. Statische site: geen build command, geen install
+command, output directory is de root.
 
-- **Vercel** — `vercel` in deze map, of de repo koppelen. Geen build command, output = root.
-- **Cloudflare Pages** — build command leeg, output directory `/`.
-- **Laravel Forge / eigen server** — de map in de webroot zetten.
+Een push naar `main` deployt automatisch, mits de repo in Vercel aan het
+project gekoppeld is (Settings → Git). Handmatig kan altijd:
+
+```bash
+vercel --prod
+```
+
+De map is al aan het project gekoppeld via `.vercel/` (staat in `.gitignore`,
+net als de `.env.local` met het OIDC-token die de CLI aanmaakt).
+
+Elders hosten kan ook: het is een gewone statische map, dus Cloudflare Pages
+(build command leeg, output `/`) of de webroot van een eigen server werkt net zo goed.
 
 ## Wat zit erin
 
