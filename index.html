@@ -17,7 +17,6 @@
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
 <link rel="stylesheet" href="assets/css/style.css" />
 <script>
-  /* thema vóór de eerste paint zetten — voorkomt een flits */
   (function () {
     try {
       var s = localStorage.getItem('bdh-theme');
@@ -32,6 +31,7 @@
 </head>
 <body>
 
+
 <!--
 
 ██████   ██████   █████  ███████     ██████  ███████     ██   ██  █████   █████  ███    ██
@@ -42,7 +42,7 @@
 
 -->
 
-<!-- ═══════════════ PRELOADER ═══════════════ -->
+
 <div class="loader" id="loader" aria-hidden="true">
   <div class="loader__panels" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></div>
 
@@ -63,20 +63,17 @@
   </div>
 </div>
 
-<!-- ═══════════════ CURSOR ═══════════════ -->
 <div class="cursor" id="cursor" aria-hidden="true">
   <div class="cursor__ring" id="cursorRing"><span class="cursor__label" id="cursorLabel"></span></div>
   <div class="cursor__dot" id="cursorDot"></div>
 </div>
 
-<!-- ═══════════════ AMBIENT LAYERS ═══════════════ -->
 <canvas class="bg-canvas" id="bgCanvas" aria-hidden="true"></canvas>
 <div class="bg-fallback" id="bgFallback" aria-hidden="true"></div>
 <div class="grain" aria-hidden="true"></div>
 <div class="scanline" aria-hidden="true"></div>
 <div class="scroll-progress" aria-hidden="true"><i id="scrollProgress"></i></div>
 
-<!-- ═══════════════ NAV ═══════════════ -->
 <header class="nav" id="nav">
   <a href="#hero" class="nav__brand" data-cursor="link">
     <span class="nav__mark"><i></i><i></i><i></i><i></i></span>
@@ -114,11 +111,9 @@
   </div>
 </div>
 
-<!-- ═══════════════ SCROLL WRAPPER ═══════════════ -->
 <div id="scrollWrap">
 <main id="scrollContent">
 
-  <!-- ─────────── HERO ─────────── -->
   <section class="hero" id="hero" data-accent="#6e8bff" data-accent-light="#3455e8">
     <div class="hero__veil" aria-hidden="true"></div>
 
@@ -171,7 +166,6 @@
     </div>
   </section>
 
-  <!-- ─────────── MARQUEE ─────────── -->
   <div class="marquee" aria-hidden="true">
     <div class="marquee__track" id="marqueeTrack">
       <span>PHP</span><i>◆</i><span>Laravel</span><i>◆</i><span>TypeScript</span><i>◆</i>
@@ -181,7 +175,6 @@
     </div>
   </div>
 
-  <!-- ─────────── OVER ─────────── -->
   <section class="section" id="over" data-accent="#a98bff" data-accent-light="#7a45e0" data-ghost="OVER MIJ">
     <div class="section__head">
       <span class="label" data-reveal><i>01</i>Over mij</span>
@@ -246,7 +239,6 @@
     </div>
   </section>
 
-  <!-- ─────────── EXPERTISE ─────────── -->
   <section class="section" id="expertise" data-accent="#4de3c1" data-accent-light="#0f9e88" data-ghost="EXPERTISE">
     <div class="section__head">
       <span class="label" data-reveal><i>02</i>Expertise</span>
@@ -303,7 +295,6 @@
     </div>
   </section>
 
-  <!-- ─────────── PROJECTEN ─────────── -->
   <section class="section" id="projecten" data-accent="#ffb457" data-accent-light="#b06a05" data-ghost="PROJECTEN">
     <div class="section__head">
       <span class="label" data-reveal><i>03</i>Projecten</span>
@@ -400,7 +391,6 @@
     </div>
   </section>
 
-  <!-- ─────────── ERVARING ─────────── -->
   <section class="section" id="ervaring" data-accent="#ff7a9c" data-accent-light="#d13b62" data-ghost="ERVARING">
     <div class="section__head">
       <span class="label" data-reveal><i>04</i>Ervaring &amp; opleiding</span>
@@ -457,7 +447,6 @@
     </div>
   </section>
 
-  <!-- ─────────── CONTACT ─────────── -->
   <section class="section section--contact" id="contact" data-accent="#6e8bff" data-accent-light="#3455e8" data-ghost="CONTACT">
     <div class="contact__glow" aria-hidden="true"></div>
 
@@ -488,7 +477,6 @@
     </div>
   </section>
 
-  <!-- ─────────── FOOTER ─────────── -->
   <footer class="footer">
     <div class="footer__top">
       <span class="footer__big" data-split-hover>BOAZ DE HAAN</span>
