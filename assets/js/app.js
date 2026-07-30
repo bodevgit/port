@@ -1107,7 +1107,7 @@
       span.textContent = sec.dataset.ghost;
       box.appendChild(span);
       sec.insertBefore(box, sec.firstChild);
-      return { sec, span };
+      return { sec, span, op: 0 };
     });
 
     /* ---- hero: de camera duwt door de titel heen ---- */
@@ -1202,6 +1202,14 @@
       for (const g of ghosts) {
         const r = g.sec.getBoundingClientRect();
         if (r.bottom < -250 || r.top > h + 250) continue;
+
+        /* alleen het woord van de sectie die de middenlijn dekt, anders
+           staan er op een sectiegrens twee overlappende woorden */
+        const owns = r.top <= h * 0.5 && r.bottom > h * 0.5 ? 1 : 0;
+        g.op += (owns - g.op) * (1 - Math.pow(0.90, dt));
+        if (g.op < 0.004) { if (g.span.style.opacity !== '0') g.span.style.opacity = '0'; continue; }
+        g.span.style.opacity = g.op.toFixed(3);
+
         const p  = clamp((h - r.top) / (h + r.height), 0, 1);
         const gh = g.span.offsetHeight || 200;
         const y  = clamp(h * 0.5 - r.top - gh / 2, 0, Math.max(0, r.height - gh));
