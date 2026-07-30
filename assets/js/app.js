@@ -126,38 +126,62 @@
     });
   })();
 
-  /* ───────────── 3. REVEAL ENGINE ───────────── */
+  /* ───────────── 3. REVEAL ENGINE ─────────────
+     Herhaalbaar: elementen worden opnieuw verborgen zodra ze het beeld
+     verlaten, zodat de animatie ook bij terugscrollen weer speelt.
+     De documentposities worden één keer gemeten (en opnieuw bij resize)
+     in plaats van elk frame — dat scheelt tientallen rect-uitlezingen
+     per frame en voorkomt layout-trashing. */
   const Reveal = (() => {
-    let queue = [];
+    let items = [];
 
     function collect() {
-      queue = [
-        ...$$('[data-reveal]:not(.is-in)'),
-        ...$$('.split:not(.is-in)')
-      ].map(el => {
+      items = [...$$('[data-reveal]'), ...$$('.split')].map(el => {
         const d = el.dataset.delay;
         if (d) el.style.setProperty('--d', d + 'ms');
-        return el;
+        return { el, top: 0, h: 0 };
       });
+      measure();
     }
-    collect();
+
+    function measure() {
+      const y = Scroll.y;
+      for (const it of items) {
+        const r = it.el.getBoundingClientRect();
+        it.top = r.top + y;          /* positie in het document */
+        it.h   = r.height;
+      }
+    }
 
     function check() {
-      if (!queue.length) return;
-      const line = vh() * 0.86;
-      for (let i = queue.length - 1; i >= 0; i--) {
-        const el = queue[i];
-        /* alles wat de lijn is gepasseerd telt als "in beeld" — ook wanneer een
-           anker-sprong het element in één keer voorbij scrolt */
-        if (el.getBoundingClientRect().top < line) {
-          el.classList.add('is-in');
-          el.dispatchEvent(new CustomEvent('reveal'));
-          queue.splice(i, 1);
+      const y = Scroll.y, h = vh(), line = h * 0.86;
+      for (const it of items) {
+        const top = it.top - y;
+        const has = it.el.classList.contains('is-in');
+        if (!has) {
+          /* binnenkomen: de bovenkant is de lijn gepasseerd en het element
+             hangt nog in beeld */
+          if (top < line && top + it.h > 0) {
+            it.el.classList.add('is-in');
+            it.el.dispatchEvent(new CustomEvent('reveal'));
+          }
+        } else {
+          /* verlaten: ruime marge, zodat het niet flikkert op de rand */
+          if (top + it.h < -60 || top > h + 40) {
+            it.el.classList.remove('is-in');
+            it.el.dispatchEvent(new CustomEvent('unreveal'));
+          }
         }
       }
     }
+
+    collect();
     onTick(check);
-    return { check, collect };
+    addEventListener('resize', measure);
+    if ('ResizeObserver' in window) {
+      new ResizeObserver(measure).observe($('#scrollContent'));
+    }
+    return { check, collect, measure };
   })();
 
   /* ───────────── 4. PRELOADER ───────────── */
@@ -829,21 +853,33 @@
     const target = parseFloat(el.dataset.count);
     const suffix = el.dataset.suffix || '';
     const holder = el.closest('[data-reveal]') || el;
-    let started = false;
+    let started = false, run = 0;
 
     const start = () => {
       if (started) return;
       started = true;
+      const mine = ++run;              /* oude telling annuleren */
       const dur = 1500;
       const t0 = performance.now();
       (function step(now) {
+        if (mine !== run) return;
         const p = clamp((now - t0) / dur, 0, 1);
         const eased = 1 - Math.pow(1 - p, 4);
         el.textContent = Math.round(target * eased) + suffix;
         if (p < 1) requestAnimationFrame(step);
       })(t0);
     };
+
+    /* opnieuw op nul zetten zodra het uit beeld is, zodat het bij
+       terugscrollen weer optelt */
+    const reset = () => {
+      started = false;
+      run++;
+      el.textContent = '0' + suffix;
+    };
+
     holder.addEventListener('reveal', start);
+    holder.addEventListener('unreveal', reset);
     if (holder.classList.contains('is-in')) start();
   });
 
@@ -996,7 +1032,7 @@
     });
     if (targets.length) document.body.appendChild(rail);
 
-    onTick(() => {
+    onTick((dt, now) => {
       const h = h0();
 
       /* — hero-uitzoom — */
@@ -1015,6 +1051,19 @@
 
       /* — scherptediepte op kaarten en projecten — */
       for (const el of blocks) {
+        /* verborgen blokken hun inline opacity teruggeven aan de CSS,
+           anders blijven ze zichtbaar hangen na een unreveal */
+        if (!el.classList.contains('is-in')) {
+          if (el.style.opacity) {
+            el.style.opacity = '';
+            el.classList.remove('fx-live');
+          }
+          el._fxAt = 0;
+          continue;
+        }
+        /* de fx neemt de opacity pas over als de reveal-fade klaar is,
+           anders wordt die fade afgekapt */
+        if (!el._fxAt) el._fxAt = now + 950;
         const r = el.getBoundingClientRect();
         if (r.bottom < -120 || r.top > h + 120) continue;
         const c     = (r.top + r.height / 2) / h;
@@ -1022,9 +1071,8 @@
         const exit  = clamp((0.35 - c) / 0.75, 0, 1);   /* verdwijnt bovenlangs */
         el.style.scale     = (1 - enter * 0.07 - exit * 0.05).toFixed(4);
         el.style.translate = `0 ${(enter * 26).toFixed(1)}px`;
-        if (el.classList.contains('is-in')) {
-          /* de opacity-transitie van de reveal moet nu uit, anders loopt
-             de scroll-fade achter de scroll aan */
+        if (now > el._fxAt) {
+          /* transitie uit, anders loopt de scroll-fade achter de scroll aan */
           if (!el.classList.contains('fx-live')) el.classList.add('fx-live');
           el.style.opacity = (1 - exit * 0.5).toFixed(3);
         }

@@ -45,6 +45,7 @@ Statische site, dus overal te hosten:
 | Lichtveeg | een veeg in de accentkleur loopt over elke titel zodra die binnenkomt |
 | Smooth scroll | lerp-gebaseerde virtuele scroll op een `position: fixed` wrapper |
 | Tekst-reveals | letter-voor-letter split met stagger, masked door `overflow: hidden` |
+| Herhaalbaar | elke reveal, teller en pop-animatie speelt opnieuw zodra je terugscrolt; elementen worden weer verborgen als ze het beeld verlaten |
 | Cursor | dot + ring met eigen lerp-snelheden, contextuele labels en states |
 | Magnetic buttons | pointer-afstand → getweende translate |
 | 3D tilt | perspectief-rotatie + pointer-tracking glow op kaarten |
