@@ -859,11 +859,15 @@
     measure();
     addEventListener('resize', measure);
 
+    let dir = 1;
     onTick(dt => {
       if (!half) { measure(); return; }
+      /* draait om zodra je omhoog scrolt */
+      if (Scroll.vel > 0.6) dir = 1; else if (Scroll.vel < -0.6) dir = -1;
       const boost = clamp(Math.abs(Scroll.vel) * 0.12, 0, 6);
-      x -= (0.55 + boost) * dt;
+      x -= dir * (0.55 + boost) * dt;
       if (x <= -half) x += half;
+      if (x >= 0)     x -= half;
       track.style.transform = `translate3d(${x.toFixed(2)}px,0,0)`;
     });
   })();
@@ -937,7 +941,132 @@
     });
   })();
 
-  /* ───────────── 17. MISC ───────────── */
+  /* ───────────── 17. CINEMATISCHE SCROLL-EFFECTEN ─────────────
+     Alles hier stuurt de lósse CSS-eigenschappen `scale` / `translate`
+     aan in plaats van `transform`, zodat het niet botst met tilt,
+     parallax en de reveal-animaties (die wél `transform` gebruiken).  */
+  if (!REDUCED) (() => {
+    const h0 = () => vh();
+
+    /* ---- reuzenwoord achter elke sectie ---- */
+    const ghosts = $$('[data-ghost]').map(sec => {
+      const box = document.createElement('div');
+      box.className = 'ghost';
+      box.setAttribute('aria-hidden', 'true');
+      const span = document.createElement('span');
+      span.textContent = sec.dataset.ghost;
+      box.appendChild(span);
+      sec.insertBefore(box, sec.firstChild);
+      return { sec, span };
+    });
+
+    /* ---- hero: de camera duwt door de titel heen ---- */
+    const heroInner  = $('.hero__inner');
+    const heroBottom = $('.hero__bottom');
+
+    /* ---- blokken die scherpstellen richting het midden ---- */
+    const blocks  = $$('.card, .project');
+    const bigMark = $('.footer__big');
+
+    /* ---- sectie-indicator rechts ---- */
+    const rail = document.createElement('nav');
+    rail.className = 'rail';
+    rail.setAttribute('aria-label', 'Sectie-indicator');
+    const targets = $$('[data-nav]').map(a => ({
+      id: a.getAttribute('href'),
+      label: a.textContent.trim()
+    }));
+    const dots = targets.map(t => {
+      const a = document.createElement('a');
+      a.href = t.id;
+      a.dataset.cursor = 'link';
+      const lab = document.createElement('span');
+      lab.className = 'rail__label';
+      lab.textContent = t.label;
+      const dot = document.createElement('span');
+      dot.className = 'rail__dot';
+      a.append(lab, dot);
+      a.addEventListener('click', e => {
+        e.preventDefault();
+        const el = $(t.id);
+        if (el) Scroll.to(el, 70);
+      });
+      rail.appendChild(a);
+      return a;
+    });
+    if (targets.length) document.body.appendChild(rail);
+
+    onTick(() => {
+      const h = h0();
+
+      /* — hero-uitzoom — */
+      if (heroInner) {
+        const p = clamp(Scroll.y / (h * 0.85), 0, 1);
+        const e = p * p;
+        heroInner.style.scale     = (1 + e * 0.26).toFixed(4);
+        heroInner.style.translate = `0 ${(-e * 70).toFixed(1)}px`;
+        heroInner.style.opacity   = Math.max(0, 1 - e * 1.25).toFixed(3);
+        heroInner.style.filter    = e > 0.012 ? `blur(${(e * 5).toFixed(1)}px)` : '';
+        if (heroBottom) {
+          heroBottom.style.opacity   = Math.max(0, 1 - p * 1.9).toFixed(3);
+          heroBottom.style.translate = `0 ${(p * 44).toFixed(1)}px`;
+        }
+      }
+
+      /* — scherptediepte op kaarten en projecten — */
+      for (const el of blocks) {
+        const r = el.getBoundingClientRect();
+        if (r.bottom < -120 || r.top > h + 120) continue;
+        const c     = (r.top + r.height / 2) / h;
+        const enter = clamp((c - 0.55) / 0.60, 0, 1);   /* komt van onderen */
+        const exit  = clamp((0.35 - c) / 0.75, 0, 1);   /* verdwijnt bovenlangs */
+        el.style.scale     = (1 - enter * 0.07 - exit * 0.05).toFixed(4);
+        el.style.translate = `0 ${(enter * 26).toFixed(1)}px`;
+        if (el.classList.contains('is-in')) {
+          /* de opacity-transitie van de reveal moet nu uit, anders loopt
+             de scroll-fade achter de scroll aan */
+          if (!el.classList.contains('fx-live')) el.classList.add('fx-live');
+          el.style.opacity = (1 - exit * 0.5).toFixed(3);
+        }
+      }
+
+      /* — reuzenwoorden: blijven in het beeldmidden hangen zolang je in de
+           sectie bent, en schuiven horizontaal mee met de scroll — */
+      for (const g of ghosts) {
+        const r = g.sec.getBoundingClientRect();
+        if (r.bottom < -250 || r.top > h + 250) continue;
+        const p  = clamp((h - r.top) / (h + r.height), 0, 1);
+        const gh = g.span.offsetHeight || 200;
+        const y  = clamp(h * 0.5 - r.top - gh / 2, 0, Math.max(0, r.height - gh));
+        g.span.style.translate = `${((0.5 - p) * 46).toFixed(2)}% ${y.toFixed(1)}px`;
+        g.span.style.scale     = (0.92 + p * 0.16).toFixed(4);
+      }
+
+      /* — footer-wordmerk zoomt in bij de bodem — */
+      if (bigMark) {
+        const r = bigMark.getBoundingClientRect();
+        if (r.top < h + 250) {
+          const p = clamp((h - r.top) / (h * 0.85), 0, 1);
+          bigMark.style.scale = (0.82 + p * 0.18).toFixed(4);
+        }
+      }
+
+      /* — indicator rechts — */
+      if (dots.length) {
+        rail.classList.toggle('is-on', Scroll.y > h * 0.55);
+        let act = -1;
+        for (let i = 0; i < targets.length; i++) {
+          const el = $(targets[i].id);
+          if (!el) continue;
+          const rr = el.getBoundingClientRect();
+          if (rr.top <= h * 0.4 && rr.bottom > h * 0.4) act = i;
+        }
+        for (let i = 0; i < dots.length; i++) dots[i].classList.toggle('is-on', i === act);
+      }
+    });
+  })();
+
+  /* ───────────── 18. MISC ───────────── */
   const yearEl = $('#year');
   if (yearEl) yearEl.textContent = new Date().getFullYear();
 

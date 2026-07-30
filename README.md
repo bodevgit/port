@@ -38,6 +38,11 @@ Statische site, dus overal te hosten:
 | Achtergrond reageert op | muispositie, muissnelheid, klik/tap, hover over interactieve elementen, scrollpositie en scrollsnelheid |
 | Sectie-thema's | elke sectie heeft een accentkleur (`data-accent`); de shader én de CSS-variabele `--a1` lerpen ernaartoe, dus de hele pagina verkleurt mee tijdens het scrollen |
 | Scroll-elasticiteit | de content buigt licht mee met de scrollsnelheid en veert terug naar exact 0, zodat tekst in rust scherp blijft |
+| Hero-uitzoom | bij het wegscrollen schaalt, vervaagt en verbleekt de hero alsof de camera erdoorheen duwt |
+| Scherptediepte | kaarten en projecten schalen en verbleken naarmate ze van het beeldmidden af staan |
+| Reuzenwoorden | per sectie een uitgelijnd contourwoord in de accentkleur dat aan het beeldmidden hangt en horizontaal meedrijft |
+| Sectie-indicator | staafjes rechts in beeld die uitgroeien en oplichten voor de sectie waar je bent |
+| Lichtveeg | een veeg in de accentkleur loopt over elke titel zodra die binnenkomt |
 | Smooth scroll | lerp-gebaseerde virtuele scroll op een `position: fixed` wrapper |
 | Tekst-reveals | letter-voor-letter split met stagger, masked door `overflow: hidden` |
 | Cursor | dot + ring met eigen lerp-snelheden, contextuele labels en states |
