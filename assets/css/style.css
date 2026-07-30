@@ -266,12 +266,10 @@ ul, ol { list-style: none; }
 .cursor.is-hidden .cursor__dot { opacity: 0; }
 @media (hover: none), (pointer: coarse) { .cursor { display: none; } }
 
-/* op een aanraakscherm blijft de cursor wél staan, maar dan onder je
-   vinger: JS toont hem bij een aanraking en laat hem daarna uitdoven.
-   De eigen markering vervangt de blauwe tap-highlight van het systeem. */
+/* op een aanraakscherm geen cursor: daar is een vinger, geen aanwijzer.
+   De blauwe systeem-highlight gaat weg, dus krijgen aanraakbare dingen
+   hun eigen ingedrukt-stand (zie 20b). */
 html.is-touch { -webkit-tap-highlight-color: transparent; }
-html.is-touch .cursor { display: block; }
-html.is-touch .cursor__dot { width: 7px; height: 7px; }
 
 /* ---------- 6. NAV ---------- */
 .nav {
@@ -1206,6 +1204,7 @@ html.is-touch .project__link:active,
 html.is-touch .footer__top-btn:active { scale: .975; }
 html.is-touch .project__link:active { color: var(--bg); background: var(--fg); border-color: var(--fg); }
 html.is-touch button.contact__row:active::before { transform: scaleX(1); }
+html.is-touch a:active, html.is-touch button:active { opacity: .62; }
 html.is-touch .chain__step:active { padding-left: .5rem; }
 html.is-touch .chain__step:active strong { color: var(--a1); }
 html.is-touch .chain__step:active .chain__node {
@@ -1226,7 +1225,6 @@ html.is-touch .chain__step:active .chain__node {
     scale: 1 !important; translate: none !important; opacity: 1 !important; filter: none !important;
   }
   .cursor, .grain, .scanline, .ghost { display: none; }
-  html.is-touch .cursor { display: none; }
   html.is-idle * { animation: none !important; }
 }
 
