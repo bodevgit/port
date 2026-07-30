@@ -54,6 +54,7 @@ Statische site, dus overal te hosten:
 | Projecten | glaskaarten met tilt, pointer-volgende gloed en uitgaande links |
 | Timeline | scroll-gestuurde gradient-rail met activerende nodes |
 | Thema | dark/light via CSS-variabelen, opgeslagen in localStorage, shader mee-animerend |
+| Signatuur | ASCII-banner als HTML-commentaar bovenaan de bron, plus een groene console-boodschap voor wie de developer tools opent |
 
 ## Toegankelijkheid & performance
 

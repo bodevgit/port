@@ -1135,6 +1135,39 @@
     });
   })();
 
+  /* ───────────── 19. SIGNATUUR IN DE CONSOLE ─────────────
+     Voor wie de developer tools opent. Dezelfde banner staat ook als
+     HTML-commentaar bovenaan de broncode. */
+  (() => {
+    const BANNER = `
+██████   ██████   █████  ███████     ██████  ███████     ██   ██  █████   █████  ███    ██
+██   ██ ██    ██ ██   ██    ███      ██   ██ ██          ██   ██ ██   ██ ██   ██ ████   ██
+██████  ██    ██ ███████   ███       ██   ██ █████       ███████ ███████ ███████ ██ ██  ██
+██   ██ ██    ██ ██   ██  ███        ██   ██ ██          ██   ██ ██   ██ ██   ██ ██  ██ ██
+██████   ██████  ██   ██ ███████     ██████  ███████     ██   ██ ██   ██ ██   ██ ██   ████
+`;
+    const mono  = 'font-family:ui-monospace,SFMono-Regular,Menlo,monospace';
+    const green = `color:#00e676;${mono};font-size:10px;line-height:1.05;text-shadow:0 0 8px rgba(0,230,118,.5)`;
+    const head  = `color:#00e676;${mono};font-size:13px;font-weight:700;text-shadow:0 0 10px rgba(0,230,118,.45)`;
+    const body  = `color:#8fa0b8;${mono};font-size:11px;line-height:1.7`;
+    const key   = `color:#00e676;${mono};font-size:11px`;
+
+    try {
+      console.log('%c' + BANNER, green);
+      console.log('%cJe kijkt onder de motorkap. Mooi.', head);
+      console.log(
+        '%cGeen framework. Geen build-stap. Geen dependencies.\n' +
+        'Alleen HTML, CSS en vanilla JavaScript.\n\n' +
+        'De achtergrond is geen video maar twee WebGL-passes: een ping-pong\n' +
+        'framebuffer van 512x512 houdt een vloeistofspoor bij dat je muis,\n' +
+        'je klikken en je scrollsnelheid volgt. Beweeg eens, of klik ergens.\n',
+        body
+      );
+      console.log('%cBroncode  %c github.com/bodevgit/port', key, body);
+      console.log('%cContact   %c boazdehaan4@gmail.com', key, body);
+    } catch (e) { /* console kan ontbreken in exotische omgevingen */ }
+  })();
+
   /* ───────────── 18. MISC ───────────── */
   const yearEl = $('#year');
   if (yearEl) yearEl.textContent = new Date().getFullYear();
