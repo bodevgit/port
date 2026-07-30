@@ -58,6 +58,10 @@
       setHeight();
       if ('ResizeObserver' in window) new ResizeObserver(setHeight).observe(content);
       current = target = window.scrollY;
+      /* meteen toepassen: de browser herstelt bij een herlaad de
+         scrollpositie, en alles wat posities meet moet een kloppende
+         weergave zien vóór het eerste frame */
+      wrap.style.transform = `translate3d(0,${-current}px,0)`;
 
       onTick(dt => {
         target = window.scrollY;
@@ -178,6 +182,8 @@
     collect();
     onTick(check);
     addEventListener('resize', measure);
+    addEventListener('load', measure);
+    if (document.fonts) document.fonts.ready.then(measure);   /* webfonts verschuiven de layout */
     if ('ResizeObserver' in window) {
       new ResizeObserver(measure).observe($('#scrollContent'));
     }

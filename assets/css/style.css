@@ -81,7 +81,7 @@ body.is-locked { overflow: hidden; }
 img, svg, canvas { display: block; max-width: 100%; }
 a { color: inherit; text-decoration: none; }
 button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
-ul { list-style: none; }
+ul, ol { list-style: none; }
 ::selection { background: var(--a1); color: #fff; }
 
 :focus-visible {
@@ -569,40 +569,65 @@ ul { list-style: none; }
 .about__card:hover .about__cardglow { opacity: 1; }
 .about__cardinner { position: relative; transform: translateZ(38px); }
 
-.about__avatar {
-  position: relative; width: 82px; height: 82px; border-radius: 50%;
-  display: grid; place-items: center; margin-bottom: 1.1rem;
-  background: var(--grad);
+/* ── keten: van idee tot productie ── */
+.chain__label {
+  display: inline-block; margin-bottom: .8rem;
+  font-family: var(--font-mono); font-size: .66rem;
+  letter-spacing: .18em; text-transform: uppercase; color: var(--fg-faint);
 }
-.about__initials { font-family: var(--font-serif); font-size: 1.7rem; color: #fff; letter-spacing: -.02em; }
-.about__ring {
-  position: absolute; inset: -10px; border-radius: 50%;
-  border: 1px solid var(--line-2);
-  animation: spinRing 12s linear infinite;
+.chain__title {
+  font-family: var(--font-serif); font-weight: 400;
+  font-size: clamp(1.6rem, 2.6vw, 2.2rem); line-height: 1.05;
+  letter-spacing: -.02em; margin-bottom: 1.9rem;
 }
-.about__ring::after {
-  content: ''; position: absolute; top: -3px; left: 50%; width: 5px; height: 5px;
-  border-radius: 50%; background: var(--a3); transform: translateX(-50%);
-}
-.about__ring--2 { inset: -20px; animation-duration: 20s; animation-direction: reverse; opacity: .5; }
-@keyframes spinRing { to { transform: rotate(360deg); } }
+.chain__title em { font-style: italic; color: var(--fg-dim); }
 
-.about__id { margin-bottom: 1.4rem; }
-.about__id strong { display: block; font-size: 1.15rem; font-weight: 600; }
-.about__id span { font-family: var(--font-mono); font-size: .74rem; color: var(--fg-faint); letter-spacing: .08em; }
+.chain { position: relative; padding-left: 2.1rem; }
+.chain__rail {
+  position: absolute; left: 5px; top: .55rem; bottom: .9rem;
+  width: 1px; background: var(--line);
+}
+.chain__fill {
+  position: absolute; inset: 0; display: block;
+  background: linear-gradient(180deg, var(--a1), var(--a2), var(--a3));
+  box-shadow: 0 0 10px color-mix(in srgb, var(--a1) 60%, transparent);
+  transform: scaleY(0); transform-origin: top;
+  transition: transform 1.5s var(--ease) .25s;
+}
+.about__card.is-in .chain__fill { transform: scaleY(1); }
 
-.codeblock {
-  border: 1px solid var(--line); border-radius: 12px;
-  background: color-mix(in srgb, var(--bg) 60%, transparent);
-  padding: 1rem 1.1rem; overflow-x: auto;
+.chain__step {
+  position: relative; padding: 0 0 1.15rem;
+  opacity: 0; translate: 0 14px;
+  transition: opacity .7s var(--ease), translate .8s var(--ease), padding-left .45s var(--ease);
+  transition-delay: calc(var(--i) * 130ms + 300ms);
 }
-.codeblock pre {
-  font-family: var(--font-mono); font-size: .72rem; line-height: 1.75;
-  color: var(--fg-dim); white-space: pre;
+.about__card.is-in .chain__step { opacity: 1; translate: none; }
+.chain__step:last-child { padding-bottom: 0; }
+.chain__step:hover { padding-left: .5rem; }
+
+.chain__node {
+  position: absolute; left: -2.1rem; top: .35rem;
+  width: 11px; height: 11px; border-radius: 50%;
+  background: var(--bg); border: 1px solid var(--line-2);
+  scale: .4; opacity: 0;
+  transition: scale .6s var(--ease-back), opacity .4s var(--ease),
+              background .4s, border-color .4s, box-shadow .4s;
+  transition-delay: calc(var(--i) * 130ms + 420ms);
 }
-.c-key { color: var(--a2); } .c-cls { color: var(--a3); }
-.c-fn  { color: var(--a1); } .c-str { color: #d8a657; }
-[data-theme="light"] .c-str { color: #a1670a; }
+.about__card.is-in .chain__node { scale: 1; opacity: 1; }
+.chain__step:hover .chain__node {
+  background: var(--a1); border-color: var(--a1);
+  box-shadow: 0 0 0 5px color-mix(in srgb, var(--a1) 16%, transparent);
+}
+
+.chain__step strong {
+  display: block; font-size: .98rem; font-weight: 600;
+  letter-spacing: -.01em; margin-bottom: .2rem;
+  transition: color .35s;
+}
+.chain__step span { display: block; font-size: .86rem; color: var(--fg-dim); line-height: 1.55; }
+.chain__step:hover strong { color: var(--a1); }
 
 /* ---------- 13. CARDS ---------- */
 .cards {
