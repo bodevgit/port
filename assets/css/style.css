@@ -673,11 +673,6 @@ html.is-touch .cursor__dot { width: 7px; height: 7px; }
 }
 .card:hover { border-color: var(--line-2); background: var(--surface-2); }
 .card:hover::before { opacity: 1; }
-.card__num {
-  position: absolute; top: 1.5rem; right: 1.6rem;
-  font-family: var(--font-mono); font-size: .68rem; color: var(--fg-faint);
-  letter-spacing: .12em;
-}
 .card__icon {
   width: 46px; height: 46px; border-radius: 12px;
   display: grid; place-items: center; margin-bottom: 1.4rem;
@@ -727,18 +722,11 @@ html.is-touch .cursor__dot { width: 7px; height: 7px; }
 }
 .project:hover .project__glow { opacity: 1; }
 
-.project__index {
-  position: absolute; top: clamp(1.2rem, 3vw, 2rem); right: clamp(1.2rem, 3vw, 2rem);
-  font-family: var(--font-serif); font-size: clamp(2.4rem, 6vw, 4.5rem);
-  line-height: 1; color: var(--fg); opacity: .07;
-  transition: opacity .5s, transform .7s var(--ease);
-}
-.project:hover .project__index { opacity: .14; transform: translateY(-4px); }
 
 .project__head {
   position: relative; display: flex; flex-wrap: wrap; gap: 1rem 2rem;
   align-items: flex-start; justify-content: space-between;
-  margin-bottom: 1.2rem; padding-right: 3.5rem;
+  margin-bottom: 1.2rem;
 }
 .project__title {
   font-size: clamp(1.5rem, 3.4vw, 2.4rem); font-weight: 600;
@@ -811,8 +799,6 @@ html.is-touch .cursor__dot { width: 7px; height: 7px; }
 
 @media (max-width: 720px) {
   .project__meta { grid-template-columns: 1fr; }
-  .project__head { padding-right: 0; }
-  .project__index { font-size: 2rem; }
 }
 
 /* ---------- 15. TIMELINE ---------- */
@@ -1210,7 +1196,6 @@ html.is-touch .project.is-focus {
   border-color: var(--line-2); background: color-mix(in srgb, var(--bg) 56%, transparent);
 }
 html.is-touch .project.is-focus .project__glow { opacity: 1; }
-html.is-touch .project.is-focus .project__index { opacity: .14; transform: translateY(-4px); }
 html.is-touch .project.is-focus .project__tags li { color: var(--fg); border-color: var(--line-2); }
 html.is-touch .project.is-focus .project__tags li:nth-child(odd)  { transform: translateY(-2px); }
 html.is-touch .project.is-focus .project__tags li:nth-child(even) { transform: translateY(2px); }
