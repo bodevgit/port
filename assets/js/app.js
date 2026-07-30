@@ -1,7 +1,8 @@
 /* ═══════════════════════════════════════════════════════════
    Boaz de Haan — Portfolio
-   Vanilla JS motion engine: smooth scroll, WebGL hero,
-   split-text reveals, magnetic cursor, tilt, parallax.
+   Vanilla JS motion engine: smooth scroll, sitebrede interactieve
+   WebGL-achtergrond (fluid trail + fbm), split-text reveals,
+   magnetic cursor, tilt, parallax en scroll-elasticiteit.
    ═══════════════════════════════════════════════════════════ */
 (() => {
   'use strict';
@@ -38,7 +39,17 @@
     }
 
     function enable() {
-      if (REDUCED || TOUCH) return;
+      if (REDUCED || TOUCH) {
+        /* zonder smooth scroll toch een scrollsnelheid bijhouden — de
+           achtergrond gebruikt die voor turbulentie */
+        let prevY = window.scrollY;
+        onTick(() => {
+          const y = window.scrollY;
+          velocity = y - prevY;
+          prevY = y;
+        });
+        return;
+      }
       enabled = true;
       Object.assign(wrap.style, {
         position: 'fixed', top: '0', left: '0', width: '100%',
@@ -68,7 +79,7 @@
     return {
       enable, to, docTop,
       get y()   { return enabled ? current : window.scrollY; },
-      get vel() { return enabled ? velocity : 0; },
+      get vel() { return velocity; },
       get max() { return document.documentElement.scrollHeight - vh(); }
     };
   })();
@@ -327,32 +338,101 @@
     });
   })();
 
-  /* ───────────── 9. WEBGL HERO ───────────── */
-  (() => {
-    const canvas = $('#glCanvas');
-    if (!canvas) return;
+  /* ───────────── 8b. SCROLL-ELASTICITEIT ─────────────
+     De pagina buigt licht mee met de scrollsnelheid en veert terug naar
+     exact 0 zodat tekst in rust haarscherp blijft. */
+  if (!REDUCED && !TOUCH) (() => {
+    const content = $('#scrollContent');
+    let cur = 0, applied = false;
+    onTick(dt => {
+      cur = lerp(cur, clamp(Scroll.vel * 0.05, -1.3, 1.3), 1 - Math.pow(0.8, dt));
+      if (Math.abs(cur) < 0.01) {
+        if (applied) { content.style.transform = ''; applied = false; }
+        return;
+      }
+      content.style.transform = `skewY(${cur.toFixed(3)}deg)`;
+      applied = true;
+    });
+  })();
 
-    const gl = canvas.getContext('webgl', { antialias: false, alpha: false, powerPreference: 'high-performance' })
-            || canvas.getContext('experimental-webgl');
+  /* ───────────── 9. INTERACTIEVE ACHTERGROND (WebGL) ─────────────
+     Twee passes:
+       1. trail  — ping-pong framebuffer die een vloeistof-achtig spoor
+                   bijhoudt: muisbeweging injecteert energie + snelheid,
+                   klikken maken expanderende ringen, alles dooft uit en
+                   wordt geadvecteerd langs zijn eigen snelheidsveld.
+       2. scene  — fbm met domain warping, vervormd dóór dat spoor.
+     Reageert op: muispositie, muissnelheid, klik, hover, scrollpositie,
+     scrollsnelheid en de accentkleur van de sectie die in beeld is.        */
+  const Background = (() => {
+    const canvas   = $('#bgCanvas');
+    if (!canvas) return null;
 
-    if (!gl || REDUCED) {
-      canvas.style.background =
-        'radial-gradient(90% 70% at 30% 10%, rgba(110,139,255,.30), transparent 60%),' +
-        'radial-gradient(70% 60% at 80% 30%, rgba(169,139,255,.24), transparent 60%),' +
-        'radial-gradient(60% 60% at 60% 90%, rgba(77,227,193,.16), transparent 60%)';
-      return;
-    }
+    const gl = !REDUCED && (
+      canvas.getContext('webgl', { antialias: false, alpha: false, depth: false,
+                                   stencil: false, powerPreference: 'high-performance' }) ||
+      canvas.getContext('experimental-webgl'));
 
-    const VS = `
-      attribute vec2 aPos;
-      void main(){ gl_Position = vec4(aPos, 0.0, 1.0); }`;
+    if (!gl) { canvas.classList.add('is-dead'); return null; }
 
-    const FS = `
+    /* ---- shaders ---- */
+    const VS = `attribute vec2 aPos; void main(){ gl_Position = vec4(aPos, 0.0, 1.0); }`;
+
+    const TRAIL_FS = `
       precision highp float;
+      uniform sampler2D uPrev;
+      uniform vec2  uTexel;
+      uniform vec2  uMouse;
+      uniform vec2  uMouseVel;
+      uniform float uAspect;
+      uniform float uBoost;
+      uniform float uDecay;
+      uniform vec3  uRipples[4];
+
+      void main(){
+        vec2 uv = gl_FragCoord.xy * uTexel;
+        vec2 pv = texture2D(uPrev, uv).gb * 2.0 - 1.0;
+
+        /* advectie: haal op waar deze vloeistof vandaan kwam */
+        vec4 adv = texture2D(uPrev, uv - pv * 0.0125);
+        float e  = adv.r * uDecay;
+        vec2  v  = (adv.gb * 2.0 - 1.0) * 0.955;
+
+        vec2 ap = vec2(uv.x * uAspect, uv.y);
+        vec2 am = vec2(uMouse.x * uAspect, uMouse.y);
+        float d = distance(ap, am);
+
+        float speed  = clamp(length(uMouseVel) * 30.0, 0.0, 2.2);
+        float inject = smoothstep(0.075, 0.0, d) * (speed * 0.5 + uBoost * 0.30);
+        e += inject;
+        v += uMouseVel * 20.0 * smoothstep(0.10, 0.0, d);
+
+        for (int i = 0; i < 4; i++) {
+          vec3 rp = uRipples[i];
+          if (rp.z >= 0.0) {
+            vec2 rc = vec2(rp.x * uAspect, rp.y);
+            float rd = distance(ap, rc);
+            float ring = abs(rd - rp.z * 0.55);
+            float a = smoothstep(0.05, 0.0, ring) * (1.0 - rp.z);
+            e += a * 0.85;
+            v += normalize(ap - rc + vec2(1e-5)) * a * 0.75;
+          }
+        }
+
+        gl_FragColor = vec4(clamp(e, 0.0, 1.0), clamp(v * 0.5 + 0.5, 0.0, 1.0), 1.0);
+      }`;
+
+    const SCENE_FS = `
+      precision highp float;
+      uniform sampler2D uTrail;
       uniform vec2  uRes;
       uniform float uTime;
       uniform vec2  uMouse;
       uniform float uDark;
+      uniform float uScroll;
+      uniform float uScrollVel;
+      uniform float uDim;
+      uniform vec3  uAccent;
 
       float hash(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123); }
       float noise(vec2 p){
@@ -364,17 +444,25 @@
       float fbm(vec2 p){
         float v = 0.0, a = 0.5;
         mat2 m = mat2(1.6, 1.2, -1.2, 1.6);
-        for (int i = 0; i < 5; i++){ v += a * noise(p); p = m * p; a *= 0.5; }
+        for (int i = 0; i < 4; i++){ v += a * noise(p); p = m * p; a *= 0.5; }
         return v;
       }
 
       void main(){
         vec2 uv = gl_FragCoord.xy / uRes.xy;
         vec2 p  = (gl_FragCoord.xy - 0.5 * uRes.xy) / uRes.y;
-        float t = uTime * 0.055;
-        p += (uMouse - 0.5) * 0.28;
 
-        // domain warping — flowing "liquid gradient"
+        vec4 tr     = texture2D(uTrail, uv);
+        float e     = tr.r;
+        vec2  tvel  = tr.gb * 2.0 - 1.0;
+
+        /* het spoor vervormt het ruisveld — dáár zit de interactie */
+        p += tvel * 0.16;
+        p += (uMouse - 0.5) * 0.20;
+        p.y += uScrollVel * 0.06;
+
+        float t = uTime * 0.05 + uScroll * 1.6 + abs(uScrollVel) * 0.12;
+
         vec2 q = vec2(fbm(p * 1.5 + t), fbm(p * 1.5 + vec2(3.2, 1.7) - t));
         vec2 r = vec2(fbm(p * 1.7 + 2.0 * q + vec2(1.7, 9.2) + 0.33 * t),
                       fbm(p * 1.7 + 2.0 * q + vec2(8.3, 2.8) + 0.26 * t));
@@ -382,103 +470,257 @@
 
         float vig = smoothstep(1.30, 0.28, length(uv - 0.5) * 1.45);
 
-        vec3 base   = vec3(0.031, 0.035, 0.047);
-        vec3 blue   = vec3(0.16, 0.26, 0.78);
-        vec3 violet = vec3(0.47, 0.30, 0.88);
-        vec3 mint   = vec3(0.16, 0.80, 0.70);
-
-        vec3 dark = mix(base, blue, clamp(pow(f, 2.2) * 2.4, 0.0, 1.0));
-        dark = mix(dark, violet, clamp(length(q) * 0.55, 0.0, 1.0));
-        dark = mix(dark, mint,   clamp(r.x * 0.34, 0.0, 1.0));
+        /* --- donker thema --- */
+        vec3 base = vec3(0.031, 0.035, 0.047);
+        vec3 dark = mix(base, uAccent * 0.55, clamp(pow(f, 2.2) * 2.4, 0.0, 1.0));
+        dark = mix(dark, uAccent, clamp(length(q) * 0.42, 0.0, 1.0));
+        dark = mix(dark, vec3(0.16, 0.80, 0.70), clamp(r.x * 0.26, 0.0, 1.0));
         dark *= 0.16 + 1.15 * f * f;
         dark *= mix(0.10, 1.0, vig);
+        dark = mix(base, dark, uDim);
+        /* gloed van het spoor — achter tekstsecties wat ingetogener */
+        dark += uAccent * e * (0.26 + 0.40 * e) * (0.55 + 0.45 * uDim);
 
+        /* --- licht thema --- */
         vec3 paper = vec3(0.957, 0.957, 0.949);
-        vec3 light = mix(paper, vec3(0.72, 0.78, 0.99), clamp(f * f * 1.9, 0.0, 1.0));
-        light = mix(light, vec3(0.85, 0.76, 0.99), clamp(length(q) * 0.5, 0.0, 1.0));
-        light = mix(light, vec3(0.74, 0.95, 0.90), clamp(r.x * 0.35, 0.0, 1.0));
-        light = mix(paper, light, vig);
+        vec3 light = mix(paper, mix(paper, uAccent, 0.42), clamp(pow(f, 1.8) * 2.0, 0.0, 1.0));
+        light = mix(light, mix(paper, uAccent, 0.30), clamp(length(q) * 0.40, 0.0, 1.0));
+        light = mix(paper, light, vig * uDim);
+        light -= (1.0 - uAccent) * e * 0.26 * (0.55 + 0.45 * uDim);
 
         vec3 col = mix(light, dark, uDark);
-        col += (hash(gl_FragCoord.xy + fract(uTime)) - 0.5) * 0.030;
+        col += (hash(gl_FragCoord.xy + fract(uTime)) - 0.5) * 0.028;
 
         gl_FragColor = vec4(col, 1.0);
       }`;
 
-    function compile(type, src) {
+    /* ---- compileren ---- */
+    function shader(type, src) {
       const s = gl.createShader(type);
       gl.shaderSource(s, src);
       gl.compileShader(s);
       if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) {
-        console.warn('[gl]', gl.getShaderInfoLog(s));
+        console.warn('[bg] shader:', gl.getShaderInfoLog(s));
         return null;
       }
       return s;
     }
+    function program(fsSrc) {
+      const vs = shader(gl.VERTEX_SHADER, VS);
+      const fs = shader(gl.FRAGMENT_SHADER, fsSrc);
+      if (!vs || !fs) return null;
+      const p = gl.createProgram();
+      gl.attachShader(p, vs); gl.attachShader(p, fs); gl.linkProgram(p);
+      if (!gl.getProgramParameter(p, gl.LINK_STATUS)) {
+        console.warn('[bg] link:', gl.getProgramInfoLog(p));
+        return null;
+      }
+      return p;
+    }
 
-    const vs = compile(gl.VERTEX_SHADER, VS);
-    const fs = compile(gl.FRAGMENT_SHADER, FS);
-    if (!vs || !fs) return;
+    const trailProg = program(TRAIL_FS);
+    const sceneProg = program(SCENE_FS);
+    if (!trailProg || !sceneProg) { canvas.classList.add('is-dead'); return null; }
 
-    const prog = gl.createProgram();
-    gl.attachShader(prog, vs);
-    gl.attachShader(prog, fs);
-    gl.linkProgram(prog);
-    if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) return;
-    gl.useProgram(prog);
-
-    const buf = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+    const quad = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, quad);
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 3,-1, -1,3]), gl.STATIC_DRAW);
-    const loc = gl.getAttribLocation(prog, 'aPos');
-    gl.enableVertexAttribArray(loc);
-    gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
 
-    const uRes   = gl.getUniformLocation(prog, 'uRes');
-    const uTime  = gl.getUniformLocation(prog, 'uTime');
-    const uMouse = gl.getUniformLocation(prog, 'uMouse');
-    const uDark  = gl.getUniformLocation(prog, 'uDark');
+    const U = (p, n) => gl.getUniformLocation(p, n);
+    const tU = {
+      prev: U(trailProg,'uPrev'), texel: U(trailProg,'uTexel'), mouse: U(trailProg,'uMouse'),
+      mvel: U(trailProg,'uMouseVel'), aspect: U(trailProg,'uAspect'),
+      boost: U(trailProg,'uBoost'), decay: U(trailProg,'uDecay'), rip: U(trailProg,'uRipples[0]')
+    };
+    const sU = {
+      trail: U(sceneProg,'uTrail'), res: U(sceneProg,'uRes'), time: U(sceneProg,'uTime'),
+      mouse: U(sceneProg,'uMouse'), dark: U(sceneProg,'uDark'), scroll: U(sceneProg,'uScroll'),
+      svel: U(sceneProg,'uScrollVel'), dim: U(sceneProg,'uDim'), accent: U(sceneProg,'uAccent')
+    };
+    const tPos = gl.getAttribLocation(trailProg, 'aPos');
+    const sPos = gl.getAttribLocation(sceneProg, 'aPos');
 
-    let dpr = Math.min(devicePixelRatio || 1, 1.5);
+    /* ---- ping-pong doelen ---- */
+    const TS = 512;
+    function target() {
+      const tex = gl.createTexture();
+      gl.bindTexture(gl.TEXTURE_2D, tex);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, TS, TS, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+      const fb = gl.createFramebuffer();
+      gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
+      gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, tex, 0);
+      gl.viewport(0, 0, TS, TS);
+      gl.clearColor(0, 0.5, 0.5, 1);            /* energie 0, snelheid neutraal */
+      gl.clear(gl.COLOR_BUFFER_BIT);
+      return { tex, fb };
+    }
+    let read = target(), write = target();
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+
+    /* ---- canvasgrootte (0.75× CSS-pixels: het is een zachte gradient) ---- */
+    const QUALITY = 0.75;
     function resize() {
-      dpr = Math.min(devicePixelRatio || 1, 1.5);
-      const w = Math.floor(canvas.clientWidth  * dpr);
-      const h = Math.floor(canvas.clientHeight * dpr);
+      const w = Math.max(2, Math.floor(innerWidth  * QUALITY));
+      const h = Math.max(2, Math.floor(innerHeight * QUALITY));
       if (canvas.width === w && canvas.height === h) return;
       canvas.width = w; canvas.height = h;
-      gl.viewport(0, 0, w, h);
-      gl.uniform2f(uRes, w, h);
     }
-    addEventListener('resize', resize);
     resize();
+    addEventListener('resize', resize);
 
-    let tmx = 0.5, tmy = 0.5, cmx = 0.5, cmy = 0.5, time = 0;
-    addEventListener('mousemove', e => {
-      tmx = e.clientX / innerWidth;
-      tmy = 1 - e.clientY / innerHeight;
+    /* ---- invoer ---- */
+    let mx = 0.5, my = 0.5, smx = 0.5, smy = 0.5, pmx = 0.5, pmy = 0.5;
+    let boost = 0, time = 0;
+    const ripples = new Float32Array([0,0,-1, 0,0,-1, 0,0,-1, 0,0,-1]);
+    const ripT = [0, 0, 0, 0];
+    let ripNext = 0;
+    const RIPPLE_MS = 1600;
+
+    /* pointermove i.p.v. mousemove: werkt ook bij slepen op touch */
+    addEventListener('pointermove', e => {
+      mx = e.clientX / innerWidth;
+      my = 1 - e.clientY / innerHeight;
     }, { passive: true });
 
-    const hero = $('#hero');
-    let visible = true;
-    if ('IntersectionObserver' in window) {
-      new IntersectionObserver(([e]) => { visible = e.isIntersecting; }, { threshold: 0 }).observe(hero);
+    addEventListener('pointerdown', e => {
+      const i = ripNext % 4;
+      ripples[i * 3]     = e.clientX / innerWidth;
+      ripples[i * 3 + 1] = 1 - e.clientY / innerHeight;
+      ripples[i * 3 + 2] = 0;
+      ripT[i] = performance.now();
+      ripNext++;
+      boost = 1;
+    }, { passive: true });
+
+    /* hover op interactieve elementen pompt extra energie in het veld */
+    document.addEventListener('mouseover', e => {
+      if (e.target.closest('[data-cursor], .card, .stack__item, .tl, .btn, a, button')) boost = 1;
+    });
+
+    /* ---- accentkleur per sectie ---- */
+    const hex2rgb = h => {
+      const n = parseInt(h.replace('#', ''), 16);
+      return [(n >> 16 & 255) / 255, (n >> 8 & 255) / 255, (n & 255) / 255];
+    };
+    const themed = $$('[data-accent]').map(el => ({
+      el,
+      dark:  hex2rgb(el.dataset.accent),
+      light: hex2rgb(el.dataset.accentLight || el.dataset.accent)
+    }));
+    let acc = [0.43, 0.55, 1.0], lastAccentCss = '';
+
+    function targetAccent() {
+      const mid = vh() * 0.42;
+      for (const s of themed) {
+        const r = s.el.getBoundingClientRect();
+        if (r.top <= mid && r.bottom > mid) {
+          return document.documentElement.dataset.theme === 'light' ? s.light : s.dark;
+        }
+      }
+      return acc;
     }
 
     window.__glDark = document.documentElement.dataset.theme === 'light' ? 0 : 1;
     let curDark = window.__glDark;
 
-    onTick(dt => {
-      resize(); // ook bijwerken terwijl er niet getekend wordt
-      if (!visible || document.hidden) return;
-      time += dt * 0.0167;
-      cmx = lerp(cmx, tmx, 1 - Math.pow(0.94, dt));
-      cmy = lerp(cmy, tmy, 1 - Math.pow(0.94, dt));
-      curDark = lerp(curDark, window.__glDark, 1 - Math.pow(0.92, dt));
-      gl.uniform1f(uTime, time);
-      gl.uniform2f(uMouse, cmx, cmy);
-      gl.uniform1f(uDark, curDark);
+    /* ---- render ---- */
+    function pass(prog, pos) {
+      gl.useProgram(prog);
+      gl.bindBuffer(gl.ARRAY_BUFFER, quad);
+      gl.enableVertexAttribArray(pos);
+      gl.vertexAttribPointer(pos, 2, gl.FLOAT, false, 0, 0);
       gl.drawArrays(gl.TRIANGLES, 0, 3);
+    }
+
+    onTick((dt, now) => {
+      resize();
+      if (document.hidden) return;
+
+      /* invoer bijwerken */
+      const k = 1 - Math.pow(0.72, dt);
+      pmx = smx; pmy = smy;
+      smx = lerp(smx, mx, k);
+      smy = lerp(smy, my, k);
+      const mvx = smx - pmx, mvy = smy - pmy;
+
+      boost = Math.max(0, boost * Math.pow(0.93, dt));
+      time += dt * 0.0167;
+
+      for (let i = 0; i < 4; i++) {
+        if (ripples[i * 3 + 2] < 0) continue;
+        const age = (now - ripT[i]) / RIPPLE_MS;
+        ripples[i * 3 + 2] = age >= 1 ? -1 : age;
+      }
+
+      const aspect = innerWidth / innerHeight;
+      const svel   = clamp(Scroll.vel / 55, -1.4, 1.4);
+      const sprog  = clamp(Scroll.y / (Scroll.max || 1), 0, 1);
+
+      /* accent lerpen — kleurt zowel de shader als de DOM (--a1) */
+      const ta = targetAccent();
+      const ak = 1 - Math.pow(0.94, dt);
+      acc[0] = lerp(acc[0], ta[0], ak);
+      acc[1] = lerp(acc[1], ta[1], ak);
+      acc[2] = lerp(acc[2], ta[2], ak);
+      const css = `rgb(${Math.round(acc[0]*255)},${Math.round(acc[1]*255)},${Math.round(acc[2]*255)})`;
+      if (css !== lastAccentCss) {           /* alleen schrijven bij verandering */
+        lastAccentCss = css;
+        document.documentElement.style.setProperty('--a1', css);
+      }
+
+      curDark = lerp(curDark, window.__glDark, 1 - Math.pow(0.92, dt));
+
+      /* ── pass 1: spoor ── */
+      gl.bindFramebuffer(gl.FRAMEBUFFER, write.fb);
+      gl.viewport(0, 0, TS, TS);
+      gl.useProgram(trailProg);
+      gl.activeTexture(gl.TEXTURE0);
+      gl.bindTexture(gl.TEXTURE_2D, read.tex);
+      gl.uniform1i(tU.prev, 0);
+      gl.uniform2f(tU.texel, 1 / TS, 1 / TS);
+      gl.uniform2f(tU.mouse, smx, smy);
+      gl.uniform2f(tU.mvel, mvx, mvy);
+      gl.uniform1f(tU.aspect, aspect);
+      gl.uniform1f(tU.boost, boost + Math.min(Math.abs(svel) * 0.5, 0.7));
+      gl.uniform1f(tU.decay, Math.pow(0.972, dt));
+      gl.uniform3fv(tU.rip, ripples);
+      pass(trailProg, tPos);
+
+      const tmp = read; read = write; write = tmp;
+
+      /* ── pass 2: scene ── */
+      gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+      gl.viewport(0, 0, canvas.width, canvas.height);
+      gl.useProgram(sceneProg);
+      gl.activeTexture(gl.TEXTURE0);
+      gl.bindTexture(gl.TEXTURE_2D, read.tex);
+      gl.uniform1i(sU.trail, 0);
+      gl.uniform2f(sU.res, canvas.width, canvas.height);
+      gl.uniform1f(sU.time, time);
+      gl.uniform2f(sU.mouse, smx, smy);
+      gl.uniform1f(sU.dark, curDark);
+      gl.uniform1f(sU.scroll, sprog);
+      gl.uniform1f(sU.svel, svel);
+      /* voller effect in de hero, rustiger achter de tekstsecties */
+      gl.uniform1f(sU.dim, lerp(1.0, 0.45, clamp(Scroll.y / (vh() * 1.1), 0, 1)));
+      gl.uniform3fv(sU.accent, acc);
+      pass(sceneProg, sPos);
     });
+
+    canvas.addEventListener('webglcontextlost', e => {
+      e.preventDefault();
+      canvas.classList.add('is-dead');
+    });
+
+    return { ripple: (x, y) => {
+      const i = ripNext % 4;
+      ripples[i*3] = x / innerWidth; ripples[i*3+1] = 1 - y / innerHeight; ripples[i*3+2] = 0;
+      ripT[i] = performance.now(); ripNext++; boost = 1;
+    }};
   })();
 
   /* ───────────── 10. NAV ───────────── */

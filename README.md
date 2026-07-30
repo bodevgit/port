@@ -34,7 +34,10 @@ Statische site, dus overal te hosten:
 | Onderdeel | Techniek |
 |---|---|
 | Preloader | tijdgebaseerde progress (framerate-onafhankelijk), panel-wipe reveal |
-| Hero-achtergrond | WebGL fragment shader: 5-octaaf fbm met domain warping, muis-parallax, film grain. Valt terug op CSS-gradients zonder WebGL |
+| Achtergrond | Sitebrede WebGL-laag in twee passes. Pass 1 houdt in een ping-pong framebuffer (512²) een vloeistof-spoor bij: muisbeweging injecteert energie én snelheid, klikken maken expanderende ringen, alles dooft uit en wordt geadvecteerd langs zijn eigen snelheidsveld. Pass 2 rendert fbm met domain warping, vervormd dóór dat spoor. Valt terug op CSS-gradients zonder WebGL |
+| Achtergrond reageert op | muispositie, muissnelheid, klik/tap, hover over interactieve elementen, scrollpositie en scrollsnelheid |
+| Sectie-thema's | elke sectie heeft een accentkleur (`data-accent`); de shader én de CSS-variabele `--a1` lerpen ernaartoe, dus de hele pagina verkleurt mee tijdens het scrollen |
+| Scroll-elasticiteit | de content buigt licht mee met de scrollsnelheid en veert terug naar exact 0, zodat tekst in rust scherp blijft |
 | Smooth scroll | lerp-gebaseerde virtuele scroll op een `position: fixed` wrapper |
 | Tekst-reveals | letter-voor-letter split met stagger, masked door `overflow: hidden` |
 | Cursor | dot + ring met eigen lerp-snelheden, contextuele labels en states |
@@ -48,13 +51,16 @@ Statische site, dus overal te hosten:
 ## Toegankelijkheid & performance
 
 - `prefers-reduced-motion` schakelt alle beweging uit (shader → statische gradient).
-- Op touch-apparaten vallen cursor, tilt, magnetics en smooth scroll weg.
-- Eén gedeelde `requestAnimationFrame`-loop voor alle modules; de shader pauzeert
-  buiten beeld en in een inactieve tab. DPR gecapt op 1.5.
+- Op touch-apparaten vallen cursor, tilt, magnetics en smooth scroll weg; de achtergrond blijft
+  wél reageren op slepen en tappen (`pointermove` / `pointerdown`).
+- Eén gedeelde `requestAnimationFrame`-loop voor alle modules; de shader pauzeert in een
+  inactieve tab. De scene rendert op 0.75× CSS-pixels (het is een zachte gradient), het
+  spoor op 512².
 - `@media print` levert een leesbare CV-versie (Ctrl/Cmd + P).
 
 ## Inhoud aanpassen
 
 Alle teksten staan in `index.html`. Voor de tech stack: één `.stack__item` per
 technologie, met `data-cat` (`lang` / `db` / `devops`) en `data-level` voor de balk.
-Kleuren en typografie zitten bovenaan `style.css` onder `:root`.
+Kleuren en typografie zitten bovenaan `style.css` onder `:root`. De accentkleur per sectie
+staat als `data-accent` / `data-accent-light` op het `<section>`-element zelf.

@@ -55,6 +55,8 @@
 </div>
 
 <!-- ═══════════════ AMBIENT LAYERS ═══════════════ -->
+<canvas class="bg-canvas" id="bgCanvas" aria-hidden="true"></canvas>
+<div class="bg-fallback" id="bgFallback" aria-hidden="true"></div>
 <div class="grain" aria-hidden="true"></div>
 <div class="scanline" aria-hidden="true"></div>
 <div class="scroll-progress" aria-hidden="true"><i id="scrollProgress"></i></div>
@@ -102,8 +104,7 @@
 <main id="scrollContent">
 
   <!-- ─────────── HERO ─────────── -->
-  <section class="hero" id="hero">
-    <canvas class="hero__canvas" id="glCanvas" aria-hidden="true"></canvas>
+  <section class="hero" id="hero" data-accent="#6e8bff" data-accent-light="#3455e8">
     <div class="hero__veil" aria-hidden="true"></div>
 
     <div class="hero__inner">
@@ -165,7 +166,7 @@
   </div>
 
   <!-- ─────────── OVER ─────────── -->
-  <section class="section" id="over">
+  <section class="section" id="over" data-accent="#a98bff" data-accent-light="#7a45e0">
     <div class="section__head">
       <span class="label" data-reveal><i>01</i>Over mij</span>
       <h2 class="section__title">
@@ -226,7 +227,7 @@
   </section>
 
   <!-- ─────────── EXPERTISE ─────────── -->
-  <section class="section" id="expertise">
+  <section class="section" id="expertise" data-accent="#4de3c1" data-accent-light="#0f9e88">
     <div class="section__head">
       <span class="label" data-reveal><i>02</i>Expertise</span>
       <h2 class="section__title">
@@ -283,7 +284,7 @@
   </section>
 
   <!-- ─────────── STACK ─────────── -->
-  <section class="section" id="stack">
+  <section class="section" id="stack" data-accent="#ffb457" data-accent-light="#b06a05">
     <div class="section__head">
       <span class="label" data-reveal><i>03</i>Tech stack</span>
       <h2 class="section__title">
@@ -326,7 +327,7 @@
   </section>
 
   <!-- ─────────── ERVARING ─────────── -->
-  <section class="section" id="ervaring">
+  <section class="section" id="ervaring" data-accent="#ff7a9c" data-accent-light="#d13b62">
     <div class="section__head">
       <span class="label" data-reveal><i>04</i>Ervaring &amp; opleiding</span>
       <h2 class="section__title">
@@ -383,7 +384,7 @@
   </section>
 
   <!-- ─────────── CONTACT ─────────── -->
-  <section class="section section--contact" id="contact">
+  <section class="section section--contact" id="contact" data-accent="#6e8bff" data-accent-light="#3455e8">
     <div class="contact__glow" aria-hidden="true"></div>
 
     <span class="label" data-reveal><i>05</i>Contact</span>

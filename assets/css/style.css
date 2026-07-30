@@ -91,6 +91,24 @@ ul { list-style: none; }
 }
 
 /* ---------- 3. AMBIENT LAYERS ---------- */
+/* De WebGL-achtergrond staat vast achter de héle pagina en reageert op
+   muis, klikken en scrollsnelheid. z-index -1 = boven de body-achtergrond,
+   onder alle content. */
+.bg-canvas, .bg-fallback {
+  position: fixed; inset: 0;
+  width: 100%; height: 100%;
+  z-index: -1; pointer-events: none;
+}
+.bg-fallback {
+  z-index: -2;
+  background:
+    radial-gradient(90% 70% at 22% 8%,  color-mix(in srgb, var(--a1) 30%, transparent), transparent 60%),
+    radial-gradient(70% 60% at 82% 26%, color-mix(in srgb, var(--a2) 24%, transparent), transparent 62%),
+    radial-gradient(75% 65% at 55% 92%, color-mix(in srgb, var(--a3) 16%, transparent), transparent 60%),
+    var(--bg);
+}
+.bg-canvas.is-dead { display: none; }
+
 .grain {
   position: fixed; inset: -50%;
   z-index: 9000; pointer-events: none;
@@ -124,7 +142,7 @@ ul { list-style: none; }
 .scroll-progress i {
   display: block; height: 100%; width: 0%;
   background: var(--grad);
-  box-shadow: 0 0 14px rgba(110,139,255,.7);
+  box-shadow: 0 0 14px color-mix(in srgb, var(--a1) 70%, transparent);
 }
 
 /* ---------- 4. PRELOADER ---------- */
@@ -347,8 +365,11 @@ ul { list-style: none; }
   padding: 9rem var(--pad) 2.5rem;
   overflow: hidden;
 }
-.hero__canvas { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; }
-.hero__veil { position: absolute; inset: 0; z-index: 1; background: var(--veil); pointer-events: none; }
+/* zachte overgang van het volle hero-effect naar de rustiger content-secties */
+.hero__veil {
+  position: absolute; inset: 0; z-index: 1; pointer-events: none;
+  background: linear-gradient(180deg, transparent 55%, color-mix(in srgb, var(--bg) 75%, transparent));
+}
 .hero__inner { position: relative; z-index: 2; width: 100%; max-width: var(--maxw); margin: 0 auto; }
 
 .hero__eyebrow {
@@ -451,7 +472,7 @@ ul { list-style: none; }
 .btn--primary:hover::before { transform: translateY(0); }
 .btn__glow {
   position: absolute; inset: -40%; z-index: -2; opacity: 0;
-  background: radial-gradient(closest-side, rgba(110,139,255,.55), transparent);
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--a1) 55%, transparent), transparent);
   transition: opacity .5s; filter: blur(18px);
 }
 .btn--primary:hover .btn__glow { opacity: 1; }
@@ -469,7 +490,8 @@ ul { list-style: none; }
   position: relative; overflow: hidden;
   border-block: 1px solid var(--line);
   padding: 1.15rem 0;
-  background: var(--bg-2);
+  background: color-mix(in srgb, var(--bg-2) 72%, transparent);
+  backdrop-filter: blur(14px) saturate(140%);
   mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
   -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
 }
@@ -531,13 +553,15 @@ ul { list-style: none; }
 
 .about__card {
   position: relative; border: 1px solid var(--line); border-radius: 20px;
-  background: var(--surface); padding: 1.8rem;
+  background: color-mix(in srgb, var(--bg) 46%, transparent);
+  backdrop-filter: blur(12px) saturate(135%);
+  padding: 1.8rem;
   transform-style: preserve-3d;
   overflow: hidden;
 }
 .about__cardglow {
   position: absolute; width: 380px; height: 380px; border-radius: 50%;
-  background: radial-gradient(closest-side, rgba(110,139,255,.22), transparent);
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--a1) 22%, transparent), transparent);
   filter: blur(28px); opacity: 0; transition: opacity .5s;
   pointer-events: none; left: var(--mx, 50%); top: var(--my, 50%);
   transform: translate(-50%,-50%);
@@ -585,16 +609,20 @@ ul { list-style: none; }
   display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
   gap: 1.1rem;
 }
+/* vier kaarten oogt uitgebalanceerder als 2×2 dan als 3+1 */
+@media (min-width: 1080px) { .cards { grid-template-columns: repeat(2, 1fr); } }
 .card {
   position: relative; padding: 2rem 1.8rem 2.2rem;
   border: 1px solid var(--line); border-radius: 18px;
-  background: var(--surface); overflow: hidden;
+  background: color-mix(in srgb, var(--bg) 46%, transparent);
+  backdrop-filter: blur(12px) saturate(135%);
+  overflow: hidden;
   transform-style: preserve-3d;
   transition: border-color .5s var(--ease), background .5s var(--ease);
 }
 .card::before {
   content: ''; position: absolute; inset: 0; opacity: 0;
-  background: radial-gradient(420px circle at var(--mx,50%) var(--my,50%), rgba(110,139,255,.14), transparent 65%);
+  background: radial-gradient(420px circle at var(--mx,50%) var(--my,50%), color-mix(in srgb, var(--a1) 16%, transparent), transparent 65%);
   transition: opacity .5s; pointer-events: none;
 }
 .card:hover { border-color: var(--line-2); background: var(--surface-2); }
@@ -662,7 +690,7 @@ ul { list-style: none; }
   display: flex; align-items: center; justify-content: space-between; gap: 1rem;
   padding: 1.05rem 1.2rem;
   border: 1px solid var(--line); border-radius: 12px;
-  background: var(--surface);
+  background: color-mix(in srgb, var(--bg) 55%, transparent);
   transition: transform .55s var(--ease), opacity .45s var(--ease),
               border-color .4s, background .4s, filter .45s;
 }
@@ -689,7 +717,7 @@ ul { list-style: none; }
 .timeline__fill {
   position: absolute; inset: 0 auto 0 0; width: 1px; height: 0%;
   background: linear-gradient(180deg, var(--a1), var(--a2), var(--a3));
-  box-shadow: 0 0 12px rgba(110,139,255,.6);
+  box-shadow: 0 0 12px color-mix(in srgb, var(--a1) 60%, transparent);
 }
 .tl { position: relative; padding: 0 0 clamp(2.8rem, 6vw, 4.5rem); }
 .tl__dot {
@@ -751,7 +779,7 @@ ul { list-style: none; }
 .contact__glow {
   position: absolute; left: 50%; top: 40%; transform: translate(-50%,-50%);
   width: min(900px, 120vw); aspect-ratio: 1;
-  background: radial-gradient(closest-side, rgba(110,139,255,.16), transparent 70%);
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--a1) 18%, transparent), transparent 70%);
   filter: blur(20px); pointer-events: none;
   animation: breathe 8s var(--ease-io) infinite alternate;
 }
@@ -816,7 +844,11 @@ button.contact__row:hover::before { transform: scaleX(1); }
 button.contact__row:hover .contact__copy { color: var(--a1); }
 
 /* ---------- 17. FOOTER ---------- */
-.footer { border-top: 1px solid var(--line); background: var(--bg-2); }
+.footer {
+  border-top: 1px solid var(--line);
+  background: color-mix(in srgb, var(--bg-2) 78%, transparent);
+  backdrop-filter: blur(18px) saturate(140%);
+}
 .footer__top {
   padding: clamp(2rem,5vw,4rem) var(--pad) 0;
   max-width: var(--maxw); margin: 0 auto; overflow: hidden;
@@ -913,7 +945,7 @@ button.contact__row:hover .contact__copy { color: var(--a1); }
 /* ---------- 22. PRINT (CV-mode) ---------- */
 @media print {
   .loader, .cursor, .grain, .scanline, .nav, .menu, .marquee,
-  .hero__canvas, .hero__veil, .scroll-progress, .footer__top,
+  .bg-canvas, .bg-fallback, .hero__veil, .scroll-progress, .footer__top,
   .toast, .filters, .hero__scroll, .contact__glow { display: none !important; }
   body { background: #fff; color: #000; }
   #scrollContent { transform: none !important; }
