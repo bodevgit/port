@@ -105,11 +105,15 @@
   const Idle = (() => {
     const DELAY = 1500;
     let last = performance.now(), amount = 0;
-    if (REDUCED) return { get amount() { return 0; } };
+    if (REDUCED) return { get amount() { return 0; }, get scrollQuiet() { return 0; } };
+
+    let lastMove = performance.now();      /* alleen scroll/klik/toets */
 
     const bump = () => { last = performance.now(); };
-    ['pointermove', 'pointerdown', 'wheel', 'keydown', 'touchstart', 'scroll']
-      .forEach(t => addEventListener(t, bump, { passive: true }));
+    const bumpMove = () => { last = lastMove = performance.now(); };
+    ['pointermove', 'touchstart'].forEach(t => addEventListener(t, bump, { passive: true }));
+    ['pointerdown', 'wheel', 'keydown', 'scroll']
+      .forEach(t => addEventListener(t, bumpMove, { passive: true }));
 
     onTick((dt, now) => {
       const idle = now - last > DELAY;
@@ -119,7 +123,12 @@
       document.documentElement.classList.toggle('is-idle', amount > 0.45);
     });
 
-    return { get amount() { return amount; } };
+    return {
+      get amount() { return amount; },
+      /* milliseconden sinds de laatste scroll, klik of toets — muisbeweging
+         telt hier bewust niet mee, want die maak je ook terwijl je leest */
+      get scrollQuiet() { return performance.now() - lastMove; }
+    };
   })();
 
   /* ───────────── 2. SPLIT TEXT ───────────── */
@@ -1225,6 +1234,111 @@
     });
   })();
 
+  /* ───────────── 18. LEESBALK ─────────────
+     Sta je een seconde stil met scrollen, dan loopt er een markering
+     woord voor woord door de alinea die het meest in beeld staat, op
+     leestempo (ruwweg 230 woorden per minuut, langere woorden krijgen
+     iets meer tijd). Muisbeweging onderbreekt niet — die maak je ook
+     terwijl je leest. Scroll je, dan dooft de markering meteen uit. */
+  if (!REDUCED) (() => {
+    const SEL = '.hero__lede, .about__lead, .about__body p, .card p, ' +
+                '.project__lead, .tl__intro, .chain__step span';
+    const START_AFTER = 1000;   /* ms zonder scrollen */
+    const PAUSE_AFTER = 1100;   /* rust tussen twee alinea's */
+
+    /* woorden verpakken zonder de opmaak eromheen te slopen: alleen
+       tekstknopen worden vervangen, dus <strong> en <em> blijven staan */
+    function wrapWords(el) {
+      if (el.dataset.rw) return;
+      el.dataset.rw = '1';
+      const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+      const nodes = [];
+      while (walker.nextNode()) nodes.push(walker.currentNode);
+      for (const n of nodes) {
+        if (!n.nodeValue.trim()) continue;
+        const frag = document.createDocumentFragment();
+        for (const part of n.nodeValue.split(/(\s+)/)) {
+          if (!part) continue;
+          if (/^\s+$/.test(part)) {
+            frag.appendChild(document.createTextNode(part));
+          } else {
+            const w = document.createElement('span');
+            w.className = 'rw';
+            w.textContent = part;
+            frag.appendChild(w);
+          }
+        }
+        n.parentNode.replaceChild(frag, n);
+      }
+    }
+
+    /* de alinea die het grootst en het meest centraal in beeld staat */
+    function pick(avoid) {
+      const h = vh();
+      let best = null, bestScore = -Infinity;
+      for (const el of $$(SEL)) {
+        const r = el.getBoundingClientRect();
+        if (r.height < 18 || r.bottom < h * 0.15 || r.top > h * 0.85) continue;
+        if (el === avoid) continue;
+        const off = Math.abs(r.top + r.height / 2 - h * 0.5);
+        const score = Math.min(r.height, 260) * 1.6 - off;
+        if (score > bestScore) { bestScore = score; best = el; }
+      }
+      return best;
+    }
+
+    let el = null, words = [], i = 0, acc = 0, hold = 0, last = null, cooldown = 0;
+
+    function clear() {
+      for (const w of words) w.classList.remove('on');
+      el = null; words = []; i = 0; acc = 0; hold = 0;
+    }
+
+    function begin(now) {
+      const next = pick(last) || pick(null);
+      if (!next) { cooldown = now + 600; return; }
+      wrapWords(next);
+      el = next;
+      words = [...el.querySelectorAll('.rw')];
+      i = 0; acc = 0; hold = 0;
+      if (!words.length) { el = null; cooldown = now + 600; }
+    }
+
+    onTick((dt, now) => {
+      if (Idle.scrollQuiet < START_AFTER) {
+        if (el || words.length) clear();
+        return;
+      }
+      if (now < cooldown) return;
+
+      if (!el) { begin(now); if (!el) return; }
+
+      /* uit beeld geraakt? dan opnieuw kiezen */
+      if (i % 8 === 0) {
+        const r = el.getBoundingClientRect();
+        const h = vh();
+        if (r.bottom < 0 || r.top > h) { last = el; clear(); return; }
+      }
+
+      acc += dt * 16.667;
+      if (acc < hold) return;
+      acc = 0;
+
+      if (i > 0 && words[i - 1]) words[i - 1].classList.remove('on');
+      if (i >= words.length) {
+        last = el;
+        clear();
+        cooldown = now + PAUSE_AFTER;
+        return;
+      }
+      const w = words[i];
+      w.classList.add('on');
+      /* leestempo: basis plus iets extra voor lange woorden */
+      hold = clamp(140 + w.textContent.length * 24, 150, 460);
+      i++;
+    });
+  })();
+
   /* ───────────── 19. SIGNATUUR IN DE CONSOLE ─────────────
      Voor wie de developer tools opent. Dezelfde banner staat ook als
      HTML-commentaar bovenaan de broncode. */
@@ -1243,7 +1357,7 @@
     } catch (e) { /* console kan ontbreken in exotische omgevingen */ }
   })();
 
-  /* ───────────── 18. MISC ───────────── */
+  /* ───────────── 20. MISC ───────────── */
   const yearEl = $('#year');
   if (yearEl) yearEl.textContent = new Date().getFullYear();
 

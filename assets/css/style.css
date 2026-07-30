@@ -1124,6 +1124,26 @@ html.is-idle .rail a.is-on .rail__dot { animation: idleRail 2.4s var(--ease-io) 
 /* de accentstreep onder de knop-glow ademt mee */
 html.is-idle .pulse::after { animation-duration: 1.5s; }
 
+/* ---------- 18d. LEESBALK ----------
+   Snel aan, traag uit: daardoor loopt er een heldere kop met een
+   uitdovende staart door de zin, zonder dat de tekst verspringt. */
+.rw {
+  border-radius: 3px;
+  transition: color .85s var(--ease),
+              background-color .85s var(--ease),
+              text-shadow .85s var(--ease);
+}
+.rw.on {
+  color: var(--fg);
+  background-color: color-mix(in srgb, var(--a1) 22%, transparent);
+  text-shadow: 0 0 14px color-mix(in srgb, var(--a1) 45%, transparent);
+  transition-duration: .1s;
+}
+[data-theme="light"] .rw.on {
+  background-color: color-mix(in srgb, var(--a1) 16%, transparent);
+  text-shadow: none;
+}
+
 /* ---------- 19. MOTION PRIMITIVES ---------- */
 [data-reveal] {
   opacity: 0;
@@ -1176,6 +1196,7 @@ html.is-idle .pulse::after { animation-duration: 1.5s; }
     transition-duration: .01ms !important;
   }
   [data-reveal], .split .ch { opacity: 1 !important; transform: none !important; }
+  .rw.on { background: none !important; text-shadow: none !important; }
   .hero__inner, .hero__bottom, .card, .project, .footer__big {
     scale: 1 !important; translate: none !important; opacity: 1 !important; filter: none !important;
   }
@@ -1193,5 +1214,6 @@ html.is-idle .pulse::after { animation-duration: 1.5s; }
   #scrollContent { transform: none !important; }
   .section, .hero { padding: 1.2rem 0; page-break-inside: avoid; }
   [data-reveal], .split .ch { opacity: 1 !important; transform: none !important; }
+  .rw.on { background: none !important; text-shadow: none !important; }
   .card, .project, .about__card { border-color: #ccc; background: none; backdrop-filter: none; }
 }

@@ -46,6 +46,7 @@ Statische site, dus overal te hosten:
 | Smooth scroll | lerp-gebaseerde virtuele scroll op een `position: fixed` wrapper |
 | Tekst-reveals | letter-voor-letter split met stagger, masked door `overflow: hidden` |
 | Werkwijze-keten | de kaart bij Over mij tekent een gradient-rail uit met vijf stappen van idee tot productie; nodes en stappen komen gestaffeld binnen |
+| Leesbalk | stop je een seconde met scrollen, dan loopt er een markering woord voor woord door de alinea die het meest in beeld staat, op leestempo. Muisbeweging onderbreekt niet, scrollen dooft hem meteen |
 | Stilstand | na 1,5 seconde zonder muis, scroll of toets komt de pagina uit zichzelf in beweging: een spookaanwijzer schildert in het vloeistofveld, blokken deinen op eigen fase, het reuzenwoord ademt, cursor en tijdlijn-nodes pulseren. Wijkt meteen zodra je iets doet |
 | Herhaalbaar | elke reveal, teller en pop-animatie speelt opnieuw zodra je terugscrolt; elementen worden weer verborgen als ze het beeld verlaten |
 | Cursor | punt volgt de muis exact, ring loopt strak achteraan en klikt vast op de vorm van het element eronder (positie, maat en hoekradius worden gelerpt). Alles op hele pixels, zodat de 1px rand scherp blijft |
