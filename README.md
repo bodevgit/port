@@ -44,7 +44,7 @@ Statische site, dus overal te hosten:
 | Magnetic buttons | pointer-afstand → getweende translate |
 | 3D tilt | perspectief-rotatie + pointer-tracking glow op kaarten |
 | Parallax | dieptelagen op titel, stats en footer-wordmark |
-| Stack | filterbare grid met morphende indicator en tellende niveaubalken |
+| Projecten | glaskaarten met tilt, pointer-volgende gloed en uitgaande links |
 | Timeline | scroll-gestuurde gradient-rail met activerende nodes |
 | Thema | dark/light via CSS-variabelen, opgeslagen in localStorage, shader mee-animerend |
 
@@ -60,7 +60,7 @@ Statische site, dus overal te hosten:
 
 ## Inhoud aanpassen
 
-Alle teksten staan in `index.html`. Voor de tech stack: één `.stack__item` per
-technologie, met `data-cat` (`lang` / `db` / `devops`) en `data-level` voor de balk.
+Alle teksten staan in `index.html`. Een project toevoegen: kopieer een `<article class="project">`
+in de sectie `#projecten` en pas titel, organisatie, omschrijving, bijdrage en tags aan.
 Kleuren en typografie zitten bovenaan `style.css` onder `:root`. De accentkleur per sectie
 staat als `data-accent` / `data-accent-light` op het `<section>`-element zelf.

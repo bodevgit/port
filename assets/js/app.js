@@ -306,8 +306,8 @@
     });
   });
 
-  /* pointer-tracking glow for cards without tilt maths conflicts */
-  $$('.card').forEach(el => {
+  /* pointer-tracking glow voor kaarten en projecten */
+  $$('.card, .project').forEach(el => {
     el.addEventListener('mousemove', e => {
       const r = el.getBoundingClientRect();
       el.style.setProperty('--mx', (((e.clientX - r.left) / r.width) * 100).toFixed(1) + '%');
@@ -598,7 +598,7 @@
 
     /* hover op interactieve elementen pompt extra energie in het veld */
     document.addEventListener('mouseover', e => {
-      if (e.target.closest('[data-cursor], .card, .stack__item, .tl, .btn, a, button')) boost = 1;
+      if (e.target.closest('[data-cursor], .card, .project, .tl, .btn, a, button')) boost = 1;
     });
 
     /* ---- accentkleur per sectie ---- */
@@ -868,65 +868,7 @@
     });
   })();
 
-  /* ───────────── 14. STACK: FILTER + LEVELS ───────────── */
-  (() => {
-    const grid = $('#stackGrid');
-    if (!grid) return;
-    const items = $$('.stack__item', grid);
-
-    /* animated level bars */
-    items.forEach((item, i) => {
-      const lvl = item.dataset.level;
-      const out = $('.stack__lvl', item);
-      item.style.setProperty('--d', (i % 8) * 45 + 'ms');
-      item.setAttribute('data-reveal', '');
-      item.addEventListener('reveal', () => {
-        setTimeout(() => {
-          item.style.setProperty('--lvl', lvl + '%');
-          let v = 0;
-          const t0 = performance.now();
-          (function step(now) {
-            const p = clamp((now - t0) / 900, 0, 1);
-            v = Math.round(lvl * (1 - Math.pow(1 - p, 3)));
-            out.textContent = v + '%';
-            if (p < 1) requestAnimationFrame(step);
-          })(t0);
-        }, (i % 8) * 45);
-      });
-    });
-    Reveal.collect();
-
-    /* filters */
-    const filters = $$('.filter');
-    const ind = $('#filterIndicator');
-
-    function moveIndicator(btn) {
-      ind.style.width  = btn.offsetWidth + 'px';
-      ind.style.height = btn.offsetHeight + 'px';
-      ind.style.transform = `translate3d(${btn.offsetLeft}px, ${btn.offsetTop}px, 0)`;
-    }
-
-    filters.forEach(btn => {
-      btn.addEventListener('click', () => {
-        filters.forEach(b => b.classList.toggle('is-active', b === btn));
-        moveIndicator(btn);
-        const cat = btn.dataset.filter;
-        items.forEach((it, i) => {
-          const match = cat === 'all' || it.dataset.cat === cat;
-          it.classList.toggle('is-dim', !match);
-          it.style.transitionDelay = (i % 10) * 18 + 'ms';
-          it.style.transform = match ? '' : 'scale(.94)';
-        });
-      });
-    });
-
-    const boot = () => moveIndicator($('.filter.is-active'));
-    addEventListener('resize', boot);
-    setTimeout(boot, 60);
-    if (document.fonts) document.fonts.ready.then(boot);
-  })();
-
-  /* ───────────── 15. TIMELINE PROGRESS ───────────── */
+  /* ───────────── 14. TIMELINE PROGRESS ───────────── */
   (() => {
     const rail  = $('.timeline__rail');
     const fillEl = $('#timelineFill');
@@ -945,7 +887,7 @@
     });
   })();
 
-  /* ───────────── 16. THEME ───────────── */
+  /* ───────────── 15. THEME ───────────── */
   (() => {
     const btn = $('#themeToggle');
     const root = document.documentElement;
@@ -964,7 +906,7 @@
     });
   })();
 
-  /* ───────────── 17. COPY TO CLIPBOARD ───────────── */
+  /* ───────────── 16. COPY TO CLIPBOARD ───────────── */
   (() => {
     const toast = $('#toast');
     let timer;
@@ -995,7 +937,7 @@
     });
   })();
 
-  /* ───────────── 18. MISC ───────────── */
+  /* ───────────── 17. MISC ───────────── */
   const yearEl = $('#year');
   if (yearEl) yearEl.textContent = new Date().getFullYear();
 
