@@ -47,7 +47,7 @@ Statische site, dus overal te hosten:
 | Tekst-reveals | letter-voor-letter split met stagger, masked door `overflow: hidden` |
 | Werkwijze-keten | de kaart bij Over mij tekent een gradient-rail uit met vijf stappen van idee tot productie; nodes en stappen komen gestaffeld binnen |
 | Herhaalbaar | elke reveal, teller en pop-animatie speelt opnieuw zodra je terugscrolt; elementen worden weer verborgen als ze het beeld verlaten |
-| Cursor | dot + ring met eigen lerp-snelheden, contextuele labels en states |
+| Cursor | punt volgt de muis exact, ring loopt strak achteraan en klikt vast op de vorm van het element eronder (positie, maat en hoekradius worden gelerpt). Alles op hele pixels, zodat de 1px rand scherp blijft |
 | Magnetic buttons | pointer-afstand → getweende translate |
 | 3D tilt | perspectief-rotatie + pointer-tracking glow op kaarten |
 | Parallax | dieptelagen op titel, stats en footer-wordmark |

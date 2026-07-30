@@ -240,46 +240,28 @@ ul, ol { list-style: none; }
   box-shadow: 0 0 10px var(--a1);
 }
 
-/* ---------- 5. CURSOR ---------- */
+/* ---------- 5. CURSOR ----------
+   Twee lagen, één schrijver: JS lerpt positie én afmeting en zet die
+   op hele pixels, zodat de 1px rand scherp blijft. Boven een klikbaar
+   element klikt de ring vast op de vorm van dat element. */
 .cursor { position: fixed; inset: 0; z-index: 9500; pointer-events: none; }
 .cursor__dot, .cursor__ring {
   position: absolute; top: 0; left: 0;
-  border-radius: 50%;
   will-change: transform;
 }
 .cursor__dot {
-  width: 5px; height: 5px; margin: -2.5px 0 0 -2.5px;
+  width: 5px; height: 5px; border-radius: 50%;
   background: var(--fg);
-  transition: opacity .3s, transform .25s var(--ease);
+  transition: opacity .25s var(--ease), background .35s var(--ease), scale .4s var(--ease-back);
 }
 .cursor__ring {
-  width: 38px; height: 38px; margin: -19px 0 0 -19px;
-  border: 1px solid var(--line-2);
-  display: grid; place-items: center;
-  transition: width .4s var(--ease), height .4s var(--ease),
-              margin .4s var(--ease), background .4s var(--ease),
-              border-color .4s var(--ease), opacity .3s;
-  backdrop-filter: invert(0);
+  width: 30px; height: 30px; border-radius: 50%;
+  border: 1px solid var(--fg-faint);
+  transition: border-color .35s var(--ease), opacity .25s var(--ease);
 }
-.cursor__label {
-  font-family: var(--font-mono); font-size: .58rem;
-  letter-spacing: .12em; text-transform: uppercase;
-  color: var(--bg); opacity: 0; transform: scale(.6);
-  transition: opacity .3s, transform .4s var(--ease-back);
-  white-space: nowrap;
-}
-.cursor.is-hover .cursor__ring {
-  width: 72px; height: 72px; margin: -36px 0 0 -36px;
-  background: var(--fg); border-color: transparent;
-}
-.cursor.is-hover .cursor__dot { opacity: 0; }
-.cursor.is-hover .cursor__label { opacity: 1; transform: scale(1); }
-.cursor.is-link .cursor__ring {
-  width: 56px; height: 56px; margin: -28px 0 0 -28px;
-  background: var(--surface-2); border-color: var(--line-2);
-}
-.cursor.is-link .cursor__dot { transform: scale(0); }
-.cursor.is-down .cursor__ring { transform: scale(.82); }
+.cursor.is-snap .cursor__ring { border-color: var(--a1); }
+.cursor.is-snap .cursor__dot  { background: var(--a1); scale: .55; }
+.cursor.is-down .cursor__dot  { scale: 1.9; }
 .cursor.is-hidden .cursor__ring,
 .cursor.is-hidden .cursor__dot { opacity: 0; }
 @media (hover: none), (pointer: coarse) { .cursor { display: none; } }

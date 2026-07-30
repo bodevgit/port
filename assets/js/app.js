@@ -269,40 +269,78 @@
     requestAnimationFrame(step);
   })();
 
-  /* ───────────── 5. CURSOR ───────────── */
+  /* ───────────── 5. CURSOR ─────────────
+     De punt volgt de muis exact — geen vertraging, dus altijd precies.
+     De ring loopt er strak achteraan en klikt vast op de vorm van het
+     element eronder: positie, breedte, hoogte en hoekradius worden
+     allemaal naar het doel gelerpt. Alles wordt op hele pixels gezet,
+     anders rendert de 1px rand op een halve pixel en oogt hij wazig. */
   if (!TOUCH && !REDUCED) (() => {
-    const cur   = $('#cursor');
-    const dot   = $('#cursorDot');
-    const ring  = $('#cursorRing');
-    const label = $('#cursorLabel');
-    const LABELS = { view: 'Bekijk', mail: 'Mail mij', copy: 'Kopieer', link: '' };
+    const cur  = $('#cursor');
+    const dot  = $('#cursorDot');
+    const ring = $('#cursorRing');
+    if (!cur) return;
+
+    const SNAP = 'a[href], button, [data-cursor], .contact__row';
+    const BASE = 30;     /* rustdiameter */
+    const GROW = 52;     /* boven een blok dat te groot is om aan vast te klikken */
 
     let mx = innerWidth / 2, my = innerHeight / 2;
-    let dx = mx, dy = my, rx = mx, ry = my;
+    let x = mx, y = my, w = BASE, h = BASE, r = BASE / 2;
+    let hit = null, hitR = 8, down = false;
 
-    window.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; }, { passive: true });
+    addEventListener('pointermove', e => { mx = e.clientX; my = e.clientY; }, { passive: true });
     document.addEventListener('mouseleave', () => cur.classList.add('is-hidden'));
     document.addEventListener('mouseenter', () => cur.classList.remove('is-hidden'));
-    document.addEventListener('mousedown',  () => cur.classList.add('is-down'));
-    document.addEventListener('mouseup',    () => cur.classList.remove('is-down'));
-
-    onTick(dt => {
-      dx = lerp(dx, mx, 1 - Math.pow(0.55, dt));
-      dy = lerp(dy, my, 1 - Math.pow(0.55, dt));
-      rx = lerp(rx, mx, 1 - Math.pow(0.82, dt));
-      ry = lerp(ry, my, 1 - Math.pow(0.82, dt));
-      dot.style.transform  = `translate3d(${dx.toFixed(2)}px,${dy.toFixed(2)}px,0)`;
-      ring.style.transform = `translate3d(${rx.toFixed(2)}px,${ry.toFixed(2)}px,0)`;
-    });
+    addEventListener('pointerdown', () => { down = true;  cur.classList.add('is-down'); });
+    addEventListener('pointerup',   () => { down = false; cur.classList.remove('is-down'); });
+    addEventListener('blur',        () => cur.classList.add('is-hidden'));
 
     document.addEventListener('mouseover', e => {
-      const t = e.target.closest('[data-cursor]');
-      cur.classList.remove('is-hover', 'is-link');
-      if (!t) { label.textContent = ''; return; }
-      const kind = t.dataset.cursor;
-      const txt = LABELS[kind] ?? '';
-      label.textContent = txt;
-      cur.classList.add(txt ? 'is-hover' : 'is-link');
+      const el = e.target.closest(SNAP);
+      if (el === hit) return;
+      hit = el;
+      /* hoekradius één keer uitlezen, niet elk frame */
+      hitR = el ? (parseFloat(getComputedStyle(el).borderTopLeftRadius) || 6) : 6;
+    });
+
+    onTick(dt => {
+      let gx = mx, gy = my, gw = BASE, gh = BASE, gr = BASE / 2, snap = false;
+
+      if (hit && hit.isConnected) {
+        const b = hit.getBoundingClientRect();
+        const past = b.width < innerWidth * 0.55 && b.height < 180 && b.width > 0;
+        if (past) {
+          /* vastklikken op de vorm van het element */
+          gx = b.left + b.width / 2;
+          gy = b.top + b.height / 2;
+          gw = b.width + 12;
+          gh = b.height + 12;
+          gr = Math.min(hitR + 6, Math.min(gw, gh) / 2);
+          snap = true;
+        } else {
+          gw = gh = GROW;      /* te groot om om te trekken: alleen groeien */
+          gr = GROW / 2;
+        }
+      }
+      if (down) { gw *= 0.92; gh *= 0.92; }
+
+      const k = 1 - Math.pow(snap ? 0.62 : 0.72, dt);
+      x += (gx - x) * k;  y += (gy - y) * k;
+      w += (gw - w) * k;  h += (gh - h) * k;
+      r += (gr - r) * k;
+
+      /* hele pixels: houdt de 1px rand scherp */
+      const rw = Math.round(w), rh = Math.round(h);
+      ring.style.width        = rw + 'px';
+      ring.style.height       = rh + 'px';
+      ring.style.borderRadius = Math.round(r) + 'px';
+      ring.style.transform    = `translate3d(${Math.round(x - rw / 2)}px,${Math.round(y - rh / 2)}px,0)`;
+
+      /* de punt zit exact op de muis */
+      dot.style.transform = `translate3d(${Math.round(mx) - 2}px,${Math.round(my) - 2}px,0)`;
+
+      cur.classList.toggle('is-snap', snap);
     });
   })();
 
