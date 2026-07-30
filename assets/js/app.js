@@ -16,6 +16,10 @@
   const TOUCH   = matchMedia('(hover: none), (pointer: coarse)').matches;
   const vh = () => window.innerHeight;
 
+  /* de CSS heeft dit onderscheid ook nodig: op een aanraakscherm bestaat
+     :hover niet, dus daar nemen andere toestanden dat werk over */
+  if (TOUCH) document.documentElement.classList.add('is-touch');
+
   /* one shared rAF loop — every module registers a tick */
   const ticks = [];
   const onTick = fn => ticks.push(fn);
@@ -386,6 +390,93 @@
     });
   })();
 
+  /* ───────────── 5b. AANRAAKCURSOR ─────────────
+     Op een telefoon is er geen muis om te volgen, maar wel een vinger.
+     De punt zit exact onder je vinger, de ring klikt vast op het element
+     dat je aanraakt en blijft na het loslaten nog even hangen voordat hij
+     uitdooft. Sleep je — dus scroll je — dan laat de ring het element los
+     en loopt hij met je vinger mee. */
+  if (TOUCH && !REDUCED) (() => {
+    const cur  = $('#cursor');
+    const dot  = $('#cursorDot');
+    const ring = $('#cursorRing');
+    if (!cur) return;
+
+    const SNAP = 'a[href], button, [data-cursor], .contact__row';
+    const BASE = 34;     /* rustdiameter, iets ruimer dan op desktop */
+    const HOLD = 850;    /* nawerking nadat je losgelaten hebt */
+
+    let tx = innerWidth / 2, ty = innerHeight / 2, sx = tx, sy = ty;
+    let x = tx, y = ty, w = BASE, h = BASE, r = BASE / 2;
+    let hit = null, hitR = 8, down = false, upAt = -1e9;
+
+    cur.classList.add('is-hidden');
+
+    addEventListener('pointerdown', e => {
+      if (e.pointerType === 'mouse') return;
+      tx = sx = e.clientX; ty = sy = e.clientY;
+      x = tx; y = ty;                      /* geen streep vanaf de vorige tik */
+      const el = document.elementFromPoint(tx, ty);
+      hit  = el ? el.closest(SNAP) : null;
+      hitR = hit ? (parseFloat(getComputedStyle(hit).borderTopLeftRadius) || 6) : 6;
+      down = true;
+      cur.classList.remove('is-hidden');
+      cur.classList.add('is-down');
+    }, { passive: true });
+
+    addEventListener('pointermove', e => {
+      if (!down || e.pointerType === 'mouse') return;
+      tx = e.clientX; ty = e.clientY;
+      /* verder dan een tik: dit is een sleep, dus het element loslaten */
+      if (hit && Math.hypot(tx - sx, ty - sy) > 12) hit = null;
+    }, { passive: true });
+
+    const release = () => {
+      if (!down) return;
+      down = false;
+      upAt = performance.now();
+      cur.classList.remove('is-down');
+    };
+    addEventListener('pointerup', release, { passive: true });
+    addEventListener('pointercancel', release, { passive: true });
+
+    onTick((dt, now) => {
+      const live = down || now - upAt < HOLD;
+      cur.classList.toggle('is-hidden', !live);
+      if (!live) return;
+
+      let gx = tx, gy = ty, gw = BASE, gh = BASE, gr = BASE / 2, snap = false;
+
+      if (hit && hit.isConnected) {
+        const b = hit.getBoundingClientRect();
+        if (b.width > 0 && b.width < innerWidth * 0.94 && b.height < 180) {
+          gx = b.left + b.width / 2;
+          gy = b.top + b.height / 2;
+          gw = b.width + 12;
+          gh = b.height + 12;
+          gr = Math.min(hitR + 6, Math.min(gw, gh) / 2);
+          snap = true;
+        }
+      }
+      if (down) { gw *= 0.94; gh *= 0.94; }
+      else if (!snap) { gw = gh = BASE * 1.7; gr = gw / 2; }   /* loslaten laat de ring uitdijen */
+
+      const k = 1 - Math.pow(snap ? 0.62 : 0.70, dt);
+      x += (gx - x) * k;  y += (gy - y) * k;
+      w += (gw - w) * k;  h += (gh - h) * k;
+      r += (gr - r) * k;
+
+      const rw = Math.round(w), rh = Math.round(h);
+      ring.style.width        = rw + 'px';
+      ring.style.height       = rh + 'px';
+      ring.style.borderRadius = Math.round(r) + 'px';
+      ring.style.transform    = `translate3d(${Math.round(x - rw / 2)}px,${Math.round(y - rh / 2)}px,0)`;
+      dot.style.transform     = `translate3d(${Math.round(tx) - 3}px,${Math.round(ty) - 3}px,0)`;
+
+      cur.classList.toggle('is-snap', snap);
+    });
+  })();
+
   /* ───────────── 6. MAGNETIC ───────────── */
   if (!TOUCH && !REDUCED) $$('[data-magnetic]').forEach(el => {
     const strength = parseFloat(el.dataset.magnetic) || 0.34;
@@ -430,6 +521,46 @@
         `perspective(1000px) rotateX(${crx.toFixed(2)}deg) rotateY(${cry.toFixed(2)}deg) translateZ(0)`;
     });
   });
+
+  /* ───────────── 7b. TILT OP AANRAAK ─────────────
+     Zonder muis is er geen hoek om op te reageren, dus doen twee andere
+     signalen dat werk: de plek van het blok op het scherm — scrollen
+     kantelt het dus — en, als het toestel die vrijgeeft, de gyroscoop.
+     Samen geeft dat dezelfde ruimtelijke indruk als de muis-tilt. De glow
+     onder de vinger krijgt zijn positie uit dezelfde twee signalen. */
+  if (TOUCH && !REDUCED) (() => {
+    const els = $$('[data-tilt]');
+    if (!els.length) return;
+
+    let roll = 0, pitch = 0, rollC = 0, pitchC = 0;
+    addEventListener('deviceorientation', e => {
+      /* iOS geeft hier zonder toestemming niets — dan blijft de
+         scrollpositie het enige signaal, en dat werkt op zichzelf ook */
+      if (e.gamma == null && e.beta == null) return;
+      roll  = clamp((e.gamma || 0) / 26, -1, 1);           /* links/rechts kantelen */
+      pitch = clamp(((e.beta || 0) - 48) / 26, -1, 1);     /* 48° ≈ hoe je een telefoon vasthoudt */
+    }, { passive: true });
+
+    onTick(dt => {
+      const h = vh(), k = 1 - Math.pow(0.88, dt);
+      rollC  += (roll  - rollC)  * k;
+      pitchC += (pitch - pitchC) * k;
+
+      for (const el of els) {
+        const r = el.getBoundingClientRect();
+        if (r.bottom < -80 || r.top > h + 80) continue;
+        const MAX = parseFloat(el.dataset.tilt) || 5;
+        /* midden van het blok ten opzichte van het schermmidden: -1 … 1 */
+        const c  = clamp(((r.top + r.height / 2) / h - 0.5) * 2, -1, 1);
+        const rx = (-c * 0.45 + pitchC * 0.55) * MAX;
+        const ry = rollC * MAX;
+        el.style.transform =
+          `perspective(1000px) rotateX(${rx.toFixed(2)}deg) rotateY(${ry.toFixed(2)}deg) translateZ(0)`;
+        el.style.setProperty('--mx', (50 + rollC * 26).toFixed(1) + '%');
+        el.style.setProperty('--my', (50 - c * 26).toFixed(1) + '%');
+      }
+    });
+  })();
 
   /* pointer-tracking glow voor kaarten en projecten */
   $$('.card, .project').forEach(el => {
@@ -666,7 +797,10 @@
     const sPos = gl.getAttribLocation(sceneProg, 'aPos');
 
     /* ---- ping-pong doelen ---- */
-    const TS = 512;
+    /* op een telefoon is de GPU krapper bemeten: een half zo grof
+       simulatieveld scheelt vier keer zoveel pixels per frame en is in
+       een zachte gradient niet te zien */
+    const TS = TOUCH ? 256 : 512;
     function target() {
       const tex = gl.createTexture();
       gl.bindTexture(gl.TEXTURE_2D, tex);
@@ -687,7 +821,7 @@
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 
     /* ---- canvasgrootte (0.75× CSS-pixels: het is een zachte gradient) ---- */
-    const QUALITY = 0.75;
+    const QUALITY = TOUCH ? 0.55 : 0.75;
     function resize() {
       const w = Math.max(2, Math.floor(innerWidth  * QUALITY));
       const h = Math.max(2, Math.floor(innerHeight * QUALITY));
@@ -725,6 +859,17 @@
     document.addEventListener('mouseover', e => {
       if (e.target.closest('[data-cursor], .card, .project, .tl, .btn, a, button')) boost = 1;
     });
+
+    /* op een aanraakscherm beweegt er niets zolang je niets aanraakt.
+       Daar neemt de scrollpositie het stuur over: die tekent zelf een
+       baan door het veld, dus scrollen schildert de achtergrond. Ligt je
+       vinger op het scherm, dan wint die weer — dan schilder je zelf. */
+    let finger = false;
+    if (TOUCH) {
+      addEventListener('pointerdown',   () => { finger = true;  }, { passive: true });
+      addEventListener('pointerup',     () => { finger = false; }, { passive: true });
+      addEventListener('pointercancel', () => { finger = false; }, { passive: true });
+    }
 
     /* ---- accentkleur per sectie ---- */
     const hex2rgb = h => {
@@ -766,6 +911,11 @@
       if (document.hidden) return;
 
       /* invoer bijwerken */
+      if (TOUCH && !finger) {
+        const s = Scroll.y / Math.max(1, vh());
+        mx = 0.5 + Math.cos(s * 2.1)  * 0.30;
+        my = 0.5 + Math.sin(s * 1.35) * 0.32;
+      }
       const k = 1 - Math.pow(0.72, dt);
       pmx = smx; pmy = smy;
       smx = lerp(smx, mx, k);
@@ -925,6 +1075,11 @@
       burger.setAttribute('aria-expanded', String(open));
       menu.setAttribute('aria-hidden', String(!open));
       document.body.classList.toggle('is-locked', open);
+      /* de menu-items schuiven met een vertraging binnen; de scramble
+         loopt daar achteraan, zodat elke regel zich uitschrijft */
+      if (open) $$('.menu__item [data-scramble]').forEach((s, i) => {
+        setTimeout(() => { if (s._scramble) s._scramble(); }, 260 + i * 70);
+      });
     });
     addEventListener('keydown', e => { if (e.key === 'Escape') closeMenu(); });
     window.closeMenu = closeMenu;
@@ -960,6 +1115,7 @@
     }
     const parent = el.closest('a') || el;
     parent.addEventListener('mouseenter', run);
+    el._scramble = run;      /* zodat het menu het ook zelf kan aftrappen */
   });
 
   /* ───────────── 12. COUNTERS ───────────── */
@@ -1166,6 +1322,10 @@
       /* — scherptediepte op kaarten en projecten — */
       const idleNow = Idle.amount;
       let bi = -1;
+      /* zonder muis is er geen hover: op aanraak licht het blok op dat
+         het dichtst bij het midden van het scherm staat, zodat scrollen
+         dezelfde nadruk geeft als de muis op desktop */
+      let focus = null, focusD = 1;
       for (const el of blocks) {
         bi++;
         /* verborgen blokken hun inline opacity teruggeven aan de CSS,
@@ -1184,6 +1344,13 @@
         const r = el.getBoundingClientRect();
         if (r.bottom < -120 || r.top > h + 120) continue;
         const c     = (r.top + r.height / 2) / h;
+        /* het blok dat de middenlijn van het scherm dekt — op de maat van
+           een telefoon is een project hoger dan het beeld, dus op de
+           afstand tot zijn middelpunt alléén zou het nooit oplichten */
+        if (TOUCH && r.top <= h * 0.5 && r.bottom > h * 0.5) {
+          const d = Math.abs(c - 0.5);
+          if (d < focusD) { focusD = d; focus = el; }
+        }
         const enter = clamp((c - 0.55) / 0.60, 0, 1);   /* komt van onderen */
         const exit  = clamp((0.35 - c) / 0.75, 0, 1);   /* verdwijnt bovenlangs */
         /* bij stilstand deint elk blok op zijn eigen fase mee */
@@ -1196,6 +1363,8 @@
           el.style.opacity = (1 - exit * 0.5).toFixed(3);
         }
       }
+      /* tussen twee blokken in licht er niets op */
+      if (TOUCH) for (const el of blocks) el.classList.toggle('is-focus', el === focus);
 
       /* — reuzenwoorden: blijven in het beeldmidden hangen zolang je in de
            sectie bent, en schuiven horizontaal mee met de scroll — */

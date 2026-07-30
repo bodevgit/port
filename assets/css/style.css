@@ -266,6 +266,13 @@ ul, ol { list-style: none; }
 .cursor.is-hidden .cursor__dot { opacity: 0; }
 @media (hover: none), (pointer: coarse) { .cursor { display: none; } }
 
+/* op een aanraakscherm blijft de cursor wél staan, maar dan onder je
+   vinger: JS toont hem bij een aanraking en laat hem daarna uitdoven.
+   De eigen markering vervangt de blauwe tap-highlight van het systeem. */
+html.is-touch { -webkit-tap-highlight-color: transparent; }
+html.is-touch .cursor { display: block; }
+html.is-touch .cursor__dot { width: 7px; height: 7px; }
+
 /* ---------- 6. NAV ---------- */
 .nav {
   position: fixed; top: 0; left: 0; right: 0; z-index: 7000;
@@ -977,15 +984,18 @@ button.contact__row:hover .contact__copy { color: var(--a1); }
 /* ---------- 18. TOAST ---------- */
 .toast {
   position: fixed; bottom: 2rem; left: 50%;
-  transform: translate(-50%, 140%);
+  /* ver genoeg naar beneden om ook leeg volledig weg te blijven: op
+     100% stak de lege pil nog net onder de schermrand uit */
+  transform: translate(-50%, calc(100% + 3rem));
+  opacity: 0;
   z-index: 9600;
   padding: .8rem 1.4rem; border-radius: 99px;
   background: var(--fg); color: var(--bg);
   font-family: var(--font-mono); font-size: .76rem; letter-spacing: .04em;
-  transition: transform .6s var(--ease-back);
+  transition: transform .6s var(--ease-back), opacity .3s var(--ease);
   pointer-events: none; white-space: nowrap;
 }
-.toast.is-show { transform: translate(-50%, 0); }
+.toast.is-show { transform: translate(-50%, 0); opacity: 1; }
 
 /* ---------- 18b. CINEMATISCHE SCROLL-EFFECTEN ---------- */
 
@@ -1180,6 +1190,44 @@ html.is-idle .pulse::after { animation-duration: 1.5s; }
   .hero__cta { flex-direction: column; }
 }
 
+/* ---------- 20b. AANRAAKSCHERM ----------
+   Alles wat op desktop aan :hover hangt heeft hier een tegenhanger. De
+   klasse `is-focus` zet JS op het blok dat het dichtst bij het midden van
+   het scherm staat, dus scrollen legt dezelfde nadruk als de muis. Wat je
+   ingedrukt houdt reageert via :active. */
+html.is-touch .card.is-focus { border-color: var(--line-2); background: var(--surface-2); }
+html.is-touch .card.is-focus::before { opacity: 1; }
+html.is-touch .card.is-focus .card__icon {
+  transform: translateY(-4px) rotate(-6deg) scale(1.06); border-color: var(--a1);
+}
+html.is-touch .card.is-focus .card__icon svg { color: var(--a3); }
+html.is-touch .card.is-focus .card__tags li { color: var(--fg); border-color: var(--line-2); }
+html.is-touch .card.is-focus .card__tags li:nth-child(odd)  { transform: translateY(-2px); }
+html.is-touch .card.is-focus .card__tags li:nth-child(even) { transform: translateY(2px); }
+html.is-touch .card.is-focus .card__line { transform: scaleX(1); }
+
+html.is-touch .project.is-focus {
+  border-color: var(--line-2); background: color-mix(in srgb, var(--bg) 56%, transparent);
+}
+html.is-touch .project.is-focus .project__glow { opacity: 1; }
+html.is-touch .project.is-focus .project__index { opacity: .14; transform: translateY(-4px); }
+html.is-touch .project.is-focus .project__tags li { color: var(--fg); border-color: var(--line-2); }
+html.is-touch .project.is-focus .project__tags li:nth-child(odd)  { transform: translateY(-2px); }
+html.is-touch .project.is-focus .project__tags li:nth-child(even) { transform: translateY(2px); }
+
+/* indrukken geeft antwoord — de magnetische knoppen doen dat op desktop */
+html.is-touch .btn:active,
+html.is-touch .project__link:active,
+html.is-touch .footer__top-btn:active { scale: .975; }
+html.is-touch .project__link:active { color: var(--bg); background: var(--fg); border-color: var(--fg); }
+html.is-touch button.contact__row:active::before { transform: scaleX(1); }
+html.is-touch .chain__step:active { padding-left: .5rem; }
+html.is-touch .chain__step:active strong { color: var(--a1); }
+html.is-touch .chain__step:active .chain__node {
+  background: var(--a1); border-color: var(--a1);
+  box-shadow: 0 0 0 5px color-mix(in srgb, var(--a1) 16%, transparent);
+}
+
 /* ---------- 21. REDUCED MOTION ---------- */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
@@ -1193,6 +1241,7 @@ html.is-idle .pulse::after { animation-duration: 1.5s; }
     scale: 1 !important; translate: none !important; opacity: 1 !important; filter: none !important;
   }
   .cursor, .grain, .scanline, .ghost { display: none; }
+  html.is-touch .cursor { display: none; }
   html.is-idle * { animation: none !important; }
 }
 
