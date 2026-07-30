@@ -33,7 +33,7 @@ Statische site, dus overal te hosten:
 
 | Onderdeel | Techniek |
 |---|---|
-| Preloader | tijdgebaseerde progress (framerate-onafhankelijk), panel-wipe reveal |
+| Preloader | voortgang volgt echte mijlpalen (DOM, webfonts, `load`) en kruipt daar soepel naartoe; naam in maskers, lijn die zich trekt, balk met meelopend lichtpunt. Aan het eind wipen zes panelen omhoog en onthullen de site |
 | Achtergrond | Sitebrede WebGL-laag in twee passes. Pass 1 houdt in een ping-pong framebuffer (512²) een vloeistof-spoor bij: muisbeweging injecteert energie én snelheid, klikken maken expanderende ringen, alles dooft uit en wordt geadvecteerd langs zijn eigen snelheidsveld. Pass 2 rendert fbm met domain warping, vervormd dóór dat spoor. Valt terug op CSS-gradients zonder WebGL |
 | Achtergrond reageert op | muispositie, muissnelheid, klik/tap, hover over interactieve elementen, scrollpositie en scrollsnelheid |
 | Sectie-thema's | elke sectie heeft een accentkleur (`data-accent`); de shader én de CSS-variabele `--a1` lerpen ernaartoe, dus de hele pagina verkleurt mee tijdens het scrollen |

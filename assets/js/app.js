@@ -190,68 +190,83 @@
     return { check, collect, measure };
   })();
 
-  /* ───────────── 4. PRELOADER ───────────── */
+  /* ───────────── 4. PRELOADER ─────────────
+     De voortgang volgt échte mijlpalen (DOM, webfonts, window.load) en
+     kruipt daar soepel naartoe, zodat het balkje nooit springt of stil
+     blijft staan. De loader blijft minstens staan tot de intro-animatie
+     is uitgespeeld, en verdwijnt pas nadat de laatste paneel-wipe klaar
+     is — anders wordt het einde afgekapt. */
   (() => {
     const loader = $('#loader');
+    if (!loader) return;
     const fill   = $('#loaderFill');
     const count  = $('#loaderCount');
     const status = $('#loaderStatus');
-    if (!loader) return;
 
-    const steps = [
-      [0,   'initialiseren'],
-      [22,  'shaders compileren'],
-      [48,  'assets laden'],
-      [72,  'animaties opbouwen'],
-      [92,  'afronden'],
-      [100, 'klaar']
-    ];
-    let p = 0, ready = false, done = false, tReady = 0, pReady = 0;
+    const MIN_SHOW = REDUCED ? 250 : 1600;   /* intro mag afmaken */
+    const OUT_MS   = REDUCED ? 220 : 1650;   /* tot de laatste wipe klaar is */
+
     const t0 = performance.now();
+    let p = 0, goal = 12, lastT = t0, done = false;
 
-    const markReady = () => {
-      if (ready) return;
-      ready = true;
-      tReady = performance.now();
-      pReady = p;
-    };
-    Promise.all([
-      new Promise(r => window.addEventListener('load', r, { once: true })),
-      document.fonts ? document.fonts.ready : Promise.resolve()
-    ]).then(markReady);
-    setTimeout(markReady, 4000); // hard safety net
-
-    /* tijdgebaseerd: identiek op 30fps, 60fps of 144fps */
-    function tick(now) {
-      const el = now - t0;
-      if (!ready) {
-        p = 92 * (1 - Math.pow(1 - clamp(el / 1700, 0, 1), 3));
-      } else {
-        const k = clamp((now - tReady) / 450, 0, 1);
-        p = pReady + (100 - pReady) * (1 - Math.pow(1 - k, 3));
-      }
-      const v = Math.round(p);
-      count.textContent = v;
-      fill.style.width = v + '%';
-      for (let i = steps.length - 1; i >= 0; i--) {
-        if (v >= steps[i][0]) {
-          if (status.textContent !== steps[i][1]) status.textContent = steps[i][1];
-          break;
-        }
-      }
-      if (v >= 100 && !done) { done = true; setTimeout(finish, 320); return; }
-      requestAnimationFrame(tick);
+    function setStatus(txt) {
+      if (status.textContent === txt) return;
+      status.style.opacity = '0';
+      setTimeout(() => { status.textContent = txt; status.style.opacity = '1'; }, 160);
+    }
+    function setGoal(v, label) {
+      if (v <= goal) return;
+      goal = v;
+      if (label) setStatus(label);
     }
 
-    function finish() {
-      loader.classList.add('is-done');
+    /* echte laadmijlpalen */
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', () => setGoal(42, 'opmaak laden'), { once: true });
+    } else {
+      setGoal(42, 'opmaak laden');
+    }
+    if (document.fonts) document.fonts.ready.then(() => setGoal(78, 'lettertypen laden'));
+    else setGoal(78, 'lettertypen laden');
+    addEventListener('load', () => setGoal(100, 'beeld opbouwen'), { once: true });
+    setTimeout(() => setGoal(100), 6000);     /* vangnet als er iets blijft hangen */
+
+    function step(now) {
+      const dt = Math.min((now - lastT) / 16.667, 4);
+      lastT = now;
+
+      p += (goal - p) * (1 - Math.pow(0.94, dt));
+      if (p < goal - 0.2) p = Math.min(goal, p + 0.06 * dt);   /* nooit stilstaan */
+
+      count.textContent = Math.min(100, Math.floor(p));
+      fill.style.width  = p.toFixed(2) + '%';
+
+      if (!done && p >= 99.4 && now - t0 >= MIN_SHOW) {
+        done = true;
+        count.textContent = '100';
+        fill.style.width = '100%';
+        setStatus('klaar');
+        setTimeout(out, 280);
+        return;
+      }
+      requestAnimationFrame(step);
+    }
+
+    /* vangnet: als requestAnimationFrame gesmoord wordt (achtergrond-tab)
+       mag de pagina nooit vergrendeld blijven staan */
+    setTimeout(() => { if (!done) { done = true; out(); } }, 9000);
+
+    function out() {
+      if (loader.classList.contains('is-out')) return;
+      loader.classList.add('is-out');
       document.body.classList.remove('is-locked');
+      Reveal.measure();
       Reveal.check();
-      setTimeout(() => loader.remove(), 1800);
+      setTimeout(() => loader.remove(), OUT_MS);
     }
 
     document.body.classList.add('is-locked');
-    requestAnimationFrame(tick);
+    requestAnimationFrame(step);
   })();
 
   /* ───────────── 5. CURSOR ───────────── */

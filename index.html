@@ -34,18 +34,23 @@
 
 <!-- ═══════════════ PRELOADER ═══════════════ -->
 <div class="loader" id="loader" aria-hidden="true">
+  <div class="loader__panels" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+
   <div class="loader__inner">
     <div class="loader__name">
-      <span class="loader__word">BOAZ</span>
-      <span class="loader__word">DE HAAN</span>
+      <span class="loader__mask"><span class="loader__word">BOAZ</span></span>
+      <span class="loader__mask"><span class="loader__word">DE HAAN</span></span>
     </div>
+
+    <span class="loader__rule" aria-hidden="true"></span>
+
     <div class="loader__meta">
-      <span class="loader__status" id="loaderStatus">initialiseren</span>
+      <span class="loader__status" id="loaderStatus">verbinden</span>
       <span class="loader__count"><span id="loaderCount">0</span><i>%</i></span>
     </div>
-    <div class="loader__bar"><div class="loader__fill" id="loaderFill"></div></div>
+
+    <div class="loader__bar"><i class="loader__fill" id="loaderFill"></i></div>
   </div>
-  <div class="loader__panels"><i></i><i></i><i></i><i></i><i></i></div>
 </div>
 
 <!-- ═══════════════ CURSOR ═══════════════ -->
