@@ -23,8 +23,17 @@
   function frame(now) {
     const dt = Math.min((now - last) / 16.667, 3); // in "frames", capped
     last = now;
-    for (let i = 0; i < ticks.length; i++) ticks[i](dt, now);
+    /* eerst opnieuw inplannen: gooit een module een fout, dan mag dat
+       niet de hele animatielus van de pagina stilleggen */
     requestAnimationFrame(frame);
+    for (let i = 0; i < ticks.length; i++) {
+      try {
+        ticks[i](dt, now);
+      } catch (err) {
+        console.error('[motion] onderdeel uitgeschakeld na een fout:', err);
+        ticks.splice(i--, 1);
+      }
+    }
   }
   requestAnimationFrame(frame);
 
@@ -88,6 +97,30 @@
     };
   })();
   Scroll.enable();
+
+  /* ───────────── 1b. INACTIVITEIT ─────────────
+     Na anderhalve seconde zonder muis, scroll of toets komt de pagina
+     uit zichzelf in beweging. `amount` loopt traag op en snel weer terug,
+     zodat het rustig invalt maar meteen wijkt zodra je iets doet. */
+  const Idle = (() => {
+    const DELAY = 1500;
+    let last = performance.now(), amount = 0;
+    if (REDUCED) return { get amount() { return 0; } };
+
+    const bump = () => { last = performance.now(); };
+    ['pointermove', 'pointerdown', 'wheel', 'keydown', 'touchstart', 'scroll']
+      .forEach(t => addEventListener(t, bump, { passive: true }));
+
+    onTick((dt, now) => {
+      const idle = now - last > DELAY;
+      const goal = idle ? 1 : 0;
+      amount += (goal - amount) * (1 - Math.pow(idle ? 0.986 : 0.80, dt));
+      if (amount < 0.002) amount = 0;
+      document.documentElement.classList.toggle('is-idle', amount > 0.45);
+    });
+
+    return { get amount() { return amount; } };
+  })();
 
   /* ───────────── 2. SPLIT TEXT ───────────── */
   function splitChars(el, step = 30) {
@@ -728,9 +761,22 @@
       pmx = smx; pmy = smy;
       smx = lerp(smx, mx, k);
       smy = lerp(smy, my, k);
+
+      /* bij stilstand neemt een spookaanwijzer het over: hij trekt een
+         trage baan over het scherm en schildert daarmee zelf in het
+         vloeistofveld, dus de achtergrond gaat uit zichzelf leven */
+      const idle = Idle.amount;
+      if (idle > 0.002) {
+        const a = time * 0.30;
+        const gx = 0.5 + Math.cos(a * 0.80) * 0.30 + Math.cos(a * 0.31) * 0.11;
+        const gy = 0.5 + Math.sin(a * 0.62) * 0.26 + Math.sin(a * 0.27) * 0.10;
+        const ik = idle * (1 - Math.pow(0.94, dt));
+        smx = lerp(smx, gx, ik);
+        smy = lerp(smy, gy, ik);
+      }
       const mvx = smx - pmx, mvy = smy - pmy;
 
-      boost = Math.max(0, boost * Math.pow(0.93, dt));
+      boost = Math.max(idle * 0.4, boost * Math.pow(0.93, dt));
       time += dt * 0.0167;
 
       for (let i = 0; i < 4; i++) {
@@ -1109,7 +1155,10 @@
       }
 
       /* — scherptediepte op kaarten en projecten — */
+      const idleNow = Idle.amount;
+      let bi = -1;
       for (const el of blocks) {
+        bi++;
         /* verborgen blokken hun inline opacity teruggeven aan de CSS,
            anders blijven ze zichtbaar hangen na een unreveal */
         if (!el.classList.contains('is-in')) {
@@ -1128,8 +1177,10 @@
         const c     = (r.top + r.height / 2) / h;
         const enter = clamp((c - 0.55) / 0.60, 0, 1);   /* komt van onderen */
         const exit  = clamp((0.35 - c) / 0.75, 0, 1);   /* verdwijnt bovenlangs */
+        /* bij stilstand deint elk blok op zijn eigen fase mee */
+        const drift = idleNow ? Math.sin(now * 0.0011 + bi * 1.7) * 5.5 * idleNow : 0;
         el.style.scale     = (1 - enter * 0.07 - exit * 0.05).toFixed(4);
-        el.style.translate = `0 ${(enter * 26).toFixed(1)}px`;
+        el.style.translate = `0 ${(enter * 26 + drift).toFixed(1)}px`;
         if (now > el._fxAt) {
           /* transitie uit, anders loopt de scroll-fade achter de scroll aan */
           if (!el.classList.contains('fx-live')) el.classList.add('fx-live');
@@ -1145,8 +1196,9 @@
         const p  = clamp((h - r.top) / (h + r.height), 0, 1);
         const gh = g.span.offsetHeight || 200;
         const y  = clamp(h * 0.5 - r.top - gh / 2, 0, Math.max(0, r.height - gh));
-        g.span.style.translate = `${((0.5 - p) * 46).toFixed(2)}% ${y.toFixed(1)}px`;
-        g.span.style.scale     = (0.92 + p * 0.16).toFixed(4);
+        const sway = idleNow ? Math.sin(now * 0.00042) * 3.2 * idleNow : 0;
+        g.span.style.translate = `${((0.5 - p) * 46 + sway).toFixed(2)}% ${y.toFixed(1)}px`;
+        g.span.style.scale     = (0.92 + p * 0.16 + (idleNow ? Math.sin(now * 0.0006) * 0.012 * idleNow : 0)).toFixed(4);
       }
 
       /* — footer-wordmerk zoomt in bij de bodem — */

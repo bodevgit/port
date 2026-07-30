@@ -1087,6 +1087,43 @@ button.contact__row:hover .contact__copy { color: var(--a1); }
   transition: border-color .5s var(--ease), background .5s var(--ease);
 }
 
+/* ---------- 18c. STILSTAND ----------
+   Na anderhalve seconde zonder invoer zet JS `is-idle` op <html>. Wat
+   hieronder staat vult aan wat de scroll-fx en de shader al doen. */
+html.is-idle .cursor__ring { animation: idleRing 3.4s var(--ease-io) infinite; }
+@keyframes idleRing { 0%, 100% { scale: 1; } 50% { scale: 1.16; } }
+
+html.is-idle .cursor__dot { animation: idlePulse 3.4s var(--ease-io) infinite; }
+@keyframes idlePulse { 0%, 100% { opacity: 1; } 50% { opacity: .45; } }
+
+/* de scrollhint wordt wat dringender */
+html.is-idle .hero__scrollline i { animation-duration: 1.3s; }
+html.is-idle .hero__scroll { color: var(--fg-dim); }
+
+/* de tijdlijn-nodes ademen */
+html.is-idle .tl.is-inview .tl__dot { animation: idleNode 2.6s var(--ease-io) infinite; }
+@keyframes idleNode {
+  0%, 100% { box-shadow: 0 0 0 5px color-mix(in srgb, var(--a1) 16%, transparent); }
+  50%      { box-shadow: 0 0 0 11px color-mix(in srgb, var(--a1) 4%, transparent); }
+}
+
+/* de bolletjes van de werkwijze-keten lopen als een golf */
+html.is-idle .about__card.is-in .chain__node {
+  animation: idleChain 2.8s var(--ease-io) infinite;
+  animation-delay: calc(var(--i) * 180ms);
+}
+@keyframes idleChain {
+  0%, 100% { border-color: var(--line-2); background: var(--bg); }
+  45%      { border-color: var(--a1);     background: var(--a1); }
+}
+
+/* de indicator rechts wijst zichzelf even aan */
+html.is-idle .rail a.is-on .rail__dot { animation: idleRail 2.4s var(--ease-io) infinite; }
+@keyframes idleRail { 0%, 100% { width: 44px; } 50% { width: 58px; } }
+
+/* de accentstreep onder de knop-glow ademt mee */
+html.is-idle .pulse::after { animation-duration: 1.5s; }
+
 /* ---------- 19. MOTION PRIMITIVES ---------- */
 [data-reveal] {
   opacity: 0;
@@ -1143,6 +1180,7 @@ button.contact__row:hover .contact__copy { color: var(--a1); }
     scale: 1 !important; translate: none !important; opacity: 1 !important; filter: none !important;
   }
   .cursor, .grain, .scanline, .ghost { display: none; }
+  html.is-idle * { animation: none !important; }
 }
 
 /* ---------- 22. PRINT (CV-mode) ---------- */
