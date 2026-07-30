@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="nl" data-theme="dark">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Boaz de Haan — Software Developer</title>
+<meta name="description" content="Portfolio van Boaz de Haan — Software Developer gespecialiseerd in full-stack webontwikkeling met PHP/Laravel, TypeScript en moderne DevOps." />
+<meta name="author" content="Boaz de Haan" />
+<meta name="theme-color" content="#08090c" />
+
+<meta property="og:type" content="website" />
+<meta property="og:title" content="Boaz de Haan — Software Developer" />
+<meta property="og:description" content="Full-stack developer. PHP/Laravel, TypeScript, Docker, Azure. Van eerste commit tot productie-deployment." />
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="assets/css/style.css" />
+<script>
+  /* thema vóór de eerste paint zetten — voorkomt een flits */
+  (function () {
+    try {
+      var s = localStorage.getItem('bdh-theme');
+      var t = s || (matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+      document.documentElement.dataset.theme = t;
+      document.querySelector('meta[name="theme-color"]')
+        .setAttribute('content', t === 'light' ? '#f4f4f2' : '#08090c');
+    } catch (e) {}
+  })();
+</script>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='24' fill='%230a0b0f'/><text y='68' x='50' text-anchor='middle' font-size='54' font-family='monospace' font-weight='bold' fill='%236e8bff'>B</text></svg>" />
+</head>
+<body>
+
+<!-- ═══════════════ PRELOADER ═══════════════ -->
+<div class="loader" id="loader" aria-hidden="true">
+  <div class="loader__inner">
+    <div class="loader__name">
+      <span class="loader__word">BOAZ</span>
+      <span class="loader__word">DE HAAN</span>
+    </div>
+    <div class="loader__meta">
+      <span class="loader__status" id="loaderStatus">initialiseren</span>
+      <span class="loader__count"><span id="loaderCount">0</span><i>%</i></span>
+    </div>
+    <div class="loader__bar"><div class="loader__fill" id="loaderFill"></div></div>
+  </div>
+  <div class="loader__panels"><i></i><i></i><i></i><i></i><i></i></div>
+</div>
+
+<!-- ═══════════════ CURSOR ═══════════════ -->
+<div class="cursor" id="cursor" aria-hidden="true">
+  <div class="cursor__ring" id="cursorRing"><span class="cursor__label" id="cursorLabel"></span></div>
+  <div class="cursor__dot" id="cursorDot"></div>
+</div>
+
+<!-- ═══════════════ AMBIENT LAYERS ═══════════════ -->
+<div class="grain" aria-hidden="true"></div>
+<div class="scanline" aria-hidden="true"></div>
+<div class="scroll-progress" aria-hidden="true"><i id="scrollProgress"></i></div>
+
+<!-- ═══════════════ NAV ═══════════════ -->
+<header class="nav" id="nav">
+  <a href="#hero" class="nav__brand" data-cursor="link">
+    <span class="nav__mark"><i></i><i></i><i></i><i></i></span>
+    <span class="nav__brandtext">Boaz&nbsp;de&nbsp;Haan</span>
+  </a>
+
+  <nav class="nav__links" aria-label="Hoofdnavigatie">
+    <a href="#over" data-nav data-cursor="link"><span data-scramble>Over</span></a>
+    <a href="#expertise" data-nav data-cursor="link"><span data-scramble>Expertise</span></a>
+    <a href="#stack" data-nav data-cursor="link"><span data-scramble>Stack</span></a>
+    <a href="#ervaring" data-nav data-cursor="link"><span data-scramble>Ervaring</span></a>
+    <a href="#contact" data-nav data-cursor="link"><span data-scramble>Contact</span></a>
+  </nav>
+
+  <div class="nav__right">
+    <button class="theme-toggle" id="themeToggle" data-cursor="link" aria-label="Wissel thema">
+      <span class="theme-toggle__track"><span class="theme-toggle__thumb"></span></span>
+    </button>
+    <button class="burger" id="burger" aria-label="Menu" aria-expanded="false"><i></i><i></i></button>
+  </div>
+</header>
+
+<div class="menu" id="menu" aria-hidden="true">
+  <div class="menu__bg"></div>
+  <div class="menu__list">
+    <a href="#over"      class="menu__item"><em>01</em><span>Over mij</span></a>
+    <a href="#expertise" class="menu__item"><em>02</em><span>Expertise</span></a>
+    <a href="#stack"     class="menu__item"><em>03</em><span>Tech stack</span></a>
+    <a href="#ervaring"  class="menu__item"><em>04</em><span>Ervaring</span></a>
+    <a href="#contact"   class="menu__item"><em>05</em><span>Contact</span></a>
+  </div>
+  <div class="menu__foot">
+    <span>Stad aan 't Haringvliet, NL</span>
+    <span>boazdehaan4@gmail.com</span>
+  </div>
+</div>
+
+<!-- ═══════════════ SCROLL WRAPPER ═══════════════ -->
+<div id="scrollWrap">
+<main id="scrollContent">
+
+  <!-- ─────────── HERO ─────────── -->
+  <section class="hero" id="hero">
+    <canvas class="hero__canvas" id="glCanvas" aria-hidden="true"></canvas>
+    <div class="hero__veil" aria-hidden="true"></div>
+
+    <div class="hero__inner">
+      <div class="hero__eyebrow" data-reveal>
+        <span class="pulse"></span>
+        <span>Beschikbaar voor nieuwe projecten</span>
+      </div>
+
+      <h1 class="hero__title">
+        <span class="line"><span data-split>Software</span></span>
+        <span class="line"><span data-split class="italic">Developer</span></span>
+      </h1>
+
+      <div class="hero__grid">
+        <p class="hero__lede" data-reveal data-delay="120">
+          19 jaar. Full-stack. Ik bouw en moderniseer productiesoftware —
+          van <strong>PHP/Laravel</strong>-backends en <strong>TypeScript</strong>-refactors
+          tot deployments op <strong>Azure</strong>, <strong>Forge</strong> en <strong>Vercel</strong>.
+        </p>
+        <div class="hero__meta" data-reveal data-delay="220">
+          <div class="hero__metaitem"><em>Locatie</em><span>Stad aan 't Haringvliet, ZH</span></div>
+          <div class="hero__metaitem"><em>Focus</em><span>Backend &amp; DevOps</span></div>
+          <div class="hero__metaitem"><em>Status</em><span>MBO‑4 Software Developer</span></div>
+        </div>
+      </div>
+
+      <div class="hero__cta" data-reveal data-delay="320">
+        <a href="#ervaring" class="btn btn--primary" data-magnetic data-cursor="link">
+          <span class="btn__label"><i>Bekijk ervaring</i><i>Bekijk ervaring</i></span>
+          <span class="btn__glow"></span>
+        </a>
+        <a href="mailto:boazdehaan4@gmail.com" class="btn btn--ghost" data-magnetic data-cursor="link">
+          <span class="btn__label"><i>Neem contact op</i><i>Neem contact op</i></span>
+        </a>
+      </div>
+    </div>
+
+    <div class="hero__bottom">
+      <div class="hero__scroll" data-reveal data-delay="420">
+        <span class="hero__scrollline"><i></i></span>
+        <span>Scroll</span>
+      </div>
+      <div class="hero__stats">
+        <div class="stat" data-reveal data-delay="440"><b data-count="2" data-suffix="+">0</b><em>jaar praktijk&shy;ervaring</em></div>
+        <div class="stat" data-reveal data-delay="520"><b data-count="20" data-suffix="+">0</b><em>technologieën in de stack</em></div>
+        <div class="stat" data-reveal data-delay="600"><b data-count="100" data-suffix="%">0</b><em>productie&shy;code, geen speeltuin</em></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─────────── MARQUEE ─────────── -->
+  <div class="marquee" aria-hidden="true">
+    <div class="marquee__track" id="marqueeTrack">
+      <span>PHP</span><i>◆</i><span>Laravel</span><i>◆</i><span>TypeScript</span><i>◆</i>
+      <span>JavaScript</span><i>◆</i><span>GraphQL</span><i>◆</i><span>Docker</span><i>◆</i>
+      <span>Azure</span><i>◆</i><span>PostgreSQL</span><i>◆</i><span>MySQL</span><i>◆</i>
+      <span>Cloudflare</span><i>◆</i><span>Envoyer</span><i>◆</i><span>Vercel</span><i>◆</i>
+    </div>
+  </div>
+
+  <!-- ─────────── OVER ─────────── -->
+  <section class="section" id="over">
+    <div class="section__head">
+      <span class="label" data-reveal><i>01</i>Over mij</span>
+      <h2 class="section__title">
+        <span class="line"><span data-split>Code die</span></span>
+        <span class="line"><span data-split class="italic">blijft draaien.</span></span>
+      </h2>
+    </div>
+
+    <div class="about">
+      <div class="about__body">
+        <p class="about__lead" data-reveal>
+          Gedreven softwareontwikkelaar met praktijkervaring in full‑stack webontwikkeling
+          en ERP‑software. Sterk in backend‑ontwikkeling met PHP/Laravel en het moderniseren
+          van bestaande codebases — waaronder het omschrijven van JavaScript naar TypeScript.
+        </p>
+        <p data-reveal data-delay="100">
+          Ik ken de volledige keten: van eerste commit tot draaiende productie‑omgeving.
+          Deployments via Microsoft Azure, Docker, Laravel Forge, Envoyer, Cloudflare en Vercel
+          zijn dagelijkse kost. Leergierig, nauwkeurig en gewend om zowel zelfstandig
+          als in teamverband aan productiesoftware te werken.
+        </p>
+
+        <ul class="about__facts">
+          <li data-reveal data-delay="140"><em>Geboren</em><span>20 september 2006, Zwijndrecht</span></li>
+          <li data-reveal data-delay="180"><em>Woonplaats</em><span>Stad aan 't Haringvliet, Zuid‑Holland</span></li>
+          <li data-reveal data-delay="220"><em>Rijbewijs</em><span>B &amp; AM</span></li>
+          <li data-reveal data-delay="260"><em>Werkwijze</em><span>Git, code reviews, refactoring</span></li>
+        </ul>
+      </div>
+
+      <aside class="about__card" data-tilt data-reveal data-delay="120">
+        <div class="about__cardglow"></div>
+        <div class="about__cardinner">
+          <div class="about__avatar">
+            <span class="about__initials">BdH</span>
+            <span class="about__ring"></span>
+            <span class="about__ring about__ring--2"></span>
+          </div>
+          <div class="about__id">
+            <strong>Boaz de Haan</strong>
+            <span>Software Developer</span>
+          </div>
+          <div class="codeblock" aria-hidden="true">
+<pre><span class="c-key">class</span> <span class="c-cls">Developer</span> {
+  <span class="c-key">public</span> <span class="c-fn">function</span> <span class="c-fn">__construct</span>(
+    <span class="c-key">private</span> <span class="c-str">string</span> $focus = <span class="c-str">'backend'</span>,
+    <span class="c-key">private</span> <span class="c-str">array</span>  $stack = [<span class="c-str">'laravel'</span>, <span class="c-str">'ts'</span>],
+  ) {}
+
+  <span class="c-key">public</span> <span class="c-fn">function</span> <span class="c-fn">ship</span>(): <span class="c-cls">Result</span> {
+    <span class="c-key">return</span> $this-&gt;<span class="c-fn">test</span>()-&gt;<span class="c-fn">review</span>()-&gt;<span class="c-fn">deploy</span>();
+  }
+}</pre>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- ─────────── EXPERTISE ─────────── -->
+  <section class="section" id="expertise">
+    <div class="section__head">
+      <span class="label" data-reveal><i>02</i>Expertise</span>
+      <h2 class="section__title">
+        <span class="line"><span data-split>Wat ik</span></span>
+        <span class="line"><span data-split class="italic">oplever.</span></span>
+      </h2>
+    </div>
+
+    <div class="cards">
+      <article class="card" data-tilt data-reveal data-cursor="link">
+        <span class="card__num">01</span>
+        <div class="card__icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M8 6 3 12l5 6M16 6l5 6-5 6M14 4l-4 16"/></svg>
+        </div>
+        <h3>Backend‑ontwikkeling</h3>
+        <p>Robuuste applicatielogica in PHP/Laravel. API's, GraphQL, authenticatie, queues en business rules die de complexiteit van een ERP aankunnen.</p>
+        <ul class="card__tags"><li>PHP</li><li>Laravel</li><li>GraphQL</li><li>REST</li></ul>
+        <span class="card__line"></span>
+      </article>
+
+      <article class="card" data-tilt data-reveal data-delay="80" data-cursor="link">
+        <span class="card__num">02</span>
+        <div class="card__icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M8 21h8M12 18v3M3 9h18"/></svg>
+        </div>
+        <h3>Frontend &amp; modernisering</h3>
+        <p>Frontend‑functionaliteit bouwen en legacy opruimen. Het omschrijven van JavaScript naar TypeScript, zodat een codebase weer voorspelbaar en onderhoudbaar wordt.</p>
+        <ul class="card__tags"><li>TypeScript</li><li>JavaScript</li><li>React</li><li>HTML/CSS</li></ul>
+        <span class="card__line"></span>
+      </article>
+
+      <article class="card" data-tilt data-reveal data-delay="160" data-cursor="link">
+        <span class="card__num">03</span>
+        <div class="card__icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v6c0 1.7 3.6 3 8 3s8-1.3 8-3V6M4 12v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/></svg>
+        </div>
+        <h3>Databases &amp; data</h3>
+        <p>Datamodellen ontwerpen, migraties draaien en queries optimaliseren. Van relationeel (MySQL, PostgreSQL, Neon) tot realtime (Firebase).</p>
+        <ul class="card__tags"><li>MySQL</li><li>PostgreSQL</li><li>Firebase</li><li>Neon</li></ul>
+        <span class="card__line"></span>
+      </article>
+
+      <article class="card" data-tilt data-reveal data-delay="240" data-cursor="link">
+        <span class="card__num">04</span>
+        <div class="card__icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M12 2v6M12 22v-6M4.9 4.9l4.2 4.2M19.1 19.1l-4.2-4.2M2 12h6M22 12h-6M4.9 19.1l4.2-4.2M19.1 4.9l-4.2 4.2"/><circle cx="12" cy="12" r="3"/></svg>
+        </div>
+        <h3>DevOps &amp; deployment</h3>
+        <p>Van build tot live. Containers met Docker, cloudservices op Azure, releases via Laravel Forge en Envoyer, DNS en caching via Cloudflare.</p>
+        <ul class="card__tags"><li>Docker</li><li>Azure</li><li>Forge</li><li>Envoyer</li><li>Cloudflare</li></ul>
+        <span class="card__line"></span>
+      </article>
+    </div>
+  </section>
+
+  <!-- ─────────── STACK ─────────── -->
+  <section class="section" id="stack">
+    <div class="section__head">
+      <span class="label" data-reveal><i>03</i>Tech stack</span>
+      <h2 class="section__title">
+        <span class="line"><span data-split>Het</span></span>
+        <span class="line"><span data-split class="italic">gereedschap.</span></span>
+      </h2>
+    </div>
+
+    <div class="filters" data-reveal>
+      <button class="filter is-active" data-filter="all"      data-cursor="link">Alles</button>
+      <button class="filter" data-filter="lang"    data-cursor="link">Talen &amp; frameworks</button>
+      <button class="filter" data-filter="db"      data-cursor="link">Databases</button>
+      <button class="filter" data-filter="devops"  data-cursor="link">DevOps &amp; tooling</button>
+      <span class="filter__indicator" id="filterIndicator"></span>
+    </div>
+
+    <div class="stack" id="stackGrid">
+      <div class="stack__item" data-cat="lang"   data-level="90"><span class="stack__name">PHP</span><span class="stack__lvl"></span></div>
+      <div class="stack__item" data-cat="lang"   data-level="90"><span class="stack__name">Laravel</span><span class="stack__lvl"></span></div>
+      <div class="stack__item" data-cat="lang"   data-level="85"><span class="stack__name">JavaScript</span><span class="stack__lvl"></span></div>
+      <div class="stack__item" data-cat="lang"   data-level="80"><span class="stack__name">TypeScript</span><span class="stack__lvl"></span></div>
+      <div class="stack__item" data-cat="lang"   data-level="70"><span class="stack__name">GraphQL</span><span class="stack__lvl"></span></div>
+      <div class="stack__item" data-cat="lang"   data-level="55"><span class="stack__name">React</span><span class="stack__lvl"></span></div>
+      <div class="stack__item" data-cat="lang"   data-level="88"><span class="stack__name">HTML</span><span class="stack__lvl"></span></div>
+      <div class="stack__item" data-cat="lang"   data-level="85"><span class="stack__name">CSS</span><span class="stack__lvl"></span></div>
+      <div class="stack__item" data-cat="lang"   data-level="82"><span class="stack__name">SQL</span><span class="stack__lvl"></span></div>
+      <div class="stack__item" data-cat="db"     data-level="85"><span class="stack__name">MySQL</span><span class="stack__lvl"></span></div>
+      <div class="stack__item" data-cat="db"     data-level="78"><span class="stack__name">PostgreSQL</span><span class="stack__lvl"></span></div>
+      <div class="stack__item" data-cat="db"     data-level="72"><span class="stack__name">Firebase</span><span class="stack__lvl"></span></div>
+      <div class="stack__item" data-cat="db"     data-level="65"><span class="stack__name">Neon</span><span class="stack__lvl"></span></div>
+      <div class="stack__item" data-cat="devops" data-level="75"><span class="stack__name">Docker</span><span class="stack__lvl"></span></div>
+      <div class="stack__item" data-cat="devops" data-level="72"><span class="stack__name">Microsoft Azure</span><span class="stack__lvl"></span></div>
+      <div class="stack__item" data-cat="devops" data-level="85"><span class="stack__name">Laravel Forge</span><span class="stack__lvl"></span></div>
+      <div class="stack__item" data-cat="devops" data-level="80"><span class="stack__name">Envoyer</span><span class="stack__lvl"></span></div>
+      <div class="stack__item" data-cat="devops" data-level="78"><span class="stack__name">Cloudflare</span><span class="stack__lvl"></span></div>
+      <div class="stack__item" data-cat="devops" data-level="75"><span class="stack__name">Vercel</span><span class="stack__lvl"></span></div>
+      <div class="stack__item" data-cat="devops" data-level="88"><span class="stack__name">Git</span><span class="stack__lvl"></span></div>
+      <div class="stack__item" data-cat="devops" data-level="80"><span class="stack__name">Visual Studio</span><span class="stack__lvl"></span></div>
+    </div>
+  </section>
+
+  <!-- ─────────── ERVARING ─────────── -->
+  <section class="section" id="ervaring">
+    <div class="section__head">
+      <span class="label" data-reveal><i>04</i>Ervaring &amp; opleiding</span>
+      <h2 class="section__title">
+        <span class="line"><span data-split>Het</span></span>
+        <span class="line"><span data-split class="italic">traject.</span></span>
+      </h2>
+    </div>
+
+    <div class="timeline" id="timeline">
+      <div class="timeline__rail"><span class="timeline__fill" id="timelineFill"></span></div>
+
+      <article class="tl" data-reveal>
+        <div class="tl__dot"></div>
+        <div class="tl__period"><span class="tl__years">2025 — 2026</span><span class="chip chip--live">Meest recent</span></div>
+        <div class="tl__body">
+          <h3>Software Developer<span class="tl__at">Tom‑IT</span></h3>
+          <p class="tl__intro">Webapplicaties gebouwd en onderhouden binnen een ontwikkelteam, van feature tot productierelease.</p>
+          <ul class="tl__list">
+            <li>Webapplicaties gebouwd en onderhouden met PHP (Laravel) en JavaScript.</li>
+            <li>Gewerkt met verschillende databases voor opslag, migraties en query‑optimalisatie.</li>
+            <li>Deployments en releases verzorgd met Laravel Forge en Envoyer; DNS en caching via Cloudflare.</li>
+            <li>Frontend‑functionaliteit ontwikkeld en projecten gedeployed via o.a. Laravel Forge.</li>
+            <li>Samengewerkt in een ontwikkelteam met versiebeheer (Git) en code reviews.</li>
+          </ul>
+          <ul class="tl__tags"><li>Laravel</li><li>JavaScript</li><li>MySQL</li><li>Forge</li><li>Envoyer</li><li>Cloudflare</li><li>Git</li></ul>
+        </div>
+      </article>
+
+      <article class="tl" data-reveal>
+        <div class="tl__dot"></div>
+        <div class="tl__period"><span class="tl__years">2024 — 2025</span></div>
+        <div class="tl__body">
+          <h3>Software Developer<span class="tl__at">Syntess Software, Zierikzee</span></h3>
+          <p class="tl__intro">Meegewerkt aan de ontwikkeling van het ERP‑softwarepakket van Syntess.</p>
+          <ul class="tl__list">
+            <li>Bijgedragen aan de doorontwikkeling van een groot, bestaand ERP‑pakket.</li>
+            <li>Gewerkt in Visual Studio met Microsoft Azure voor cloudservices en deployment.</li>
+            <li>Firebase ingezet als database binnen het ERP‑systeem.</li>
+          </ul>
+          <ul class="tl__tags"><li>ERP</li><li>Visual Studio</li><li>Azure</li><li>Firebase</li></ul>
+        </div>
+      </article>
+
+      <article class="tl tl--edu" data-reveal>
+        <div class="tl__dot"></div>
+        <div class="tl__period"><span class="tl__years">2023 — 2026</span><span class="chip">Opleiding</span></div>
+        <div class="tl__body">
+          <h3>MBO Software Developer — niveau 4<span class="tl__at">Hoornbeeck College</span></h3>
+          <p class="tl__intro">Opleiding gericht op softwareontwikkeling: programmeren, databases, webtechnologie en projectmatig werken.</p>
+          <ul class="tl__tags"><li>Programmeren</li><li>Databases</li><li>Webtechnologie</li><li>Projectmatig werken</li></ul>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <!-- ─────────── CONTACT ─────────── -->
+  <section class="section section--contact" id="contact">
+    <div class="contact__glow" aria-hidden="true"></div>
+
+    <span class="label" data-reveal><i>05</i>Contact</span>
+    <h2 class="contact__title">
+      <span class="line"><span data-split>Laten we</span></span>
+      <span class="line"><span data-split class="italic">iets bouwen.</span></span>
+    </h2>
+
+    <a class="contact__mail" href="mailto:boazdehaan4@gmail.com" data-magnetic data-cursor="mail">
+      <span class="contact__mailinner">
+        <i>boazdehaan4@gmail.com</i>
+        <i>boazdehaan4@gmail.com</i>
+      </span>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M7 17 17 7M9 7h8v8"/></svg>
+    </a>
+
+    <div class="contact__rows">
+      <button class="contact__row" data-copy="boazdehaan4@gmail.com" data-cursor="copy" data-reveal>
+        <em>E‑mail</em><span>boazdehaan4@gmail.com</span><b class="contact__copy">Kopieer</b>
+      </button>
+      <button class="contact__row" data-copy="0622357942" data-cursor="copy" data-reveal data-delay="80">
+        <em>Telefoon</em><span>06 22 35 79 42</span><b class="contact__copy">Kopieer</b>
+      </button>
+      <div class="contact__row contact__row--static" data-reveal data-delay="160">
+        <em>Locatie</em><span>Stad aan 't Haringvliet, Zuid‑Holland</span><b>NL</b>
+      </div>
+      <div class="contact__row contact__row--static" data-reveal data-delay="240">
+        <em>Mobiliteit</em><span>Rijbewijs B &amp; AM</span><b>✓</b>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─────────── FOOTER ─────────── -->
+  <footer class="footer">
+    <div class="footer__top">
+      <span class="footer__big" data-split-hover>BOAZ DE HAAN</span>
+    </div>
+    <div class="footer__bar">
+      <span>© <span id="year">2026</span> — Boaz de Haan</span>
+      <span class="footer__center">Gebouwd met vanilla JS, WebGL &amp; te veel aandacht voor detail</span>
+      <button class="footer__top-btn" id="toTop" data-cursor="link" data-magnetic>Terug naar boven ↑</button>
+    </div>
+  </footer>
+
+</main>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="assets/js/app.js"></script>
+</body>
+</html>
